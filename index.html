@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Analytics Dashboard</title>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      padding: 20px; 
+      background: #f5f5f5; 
+      color: #333;
+    }
+    h1 { margin-bottom: 10px; }
+    .card {
+      background: #fff; 
+      padding: 20px; 
+      margin: 10px 0;
+      border-radius: 10px; 
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .site-info {
+      margin: 15px 0;
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Website Analytics</h1>
+  <div class="site-info" id="siteInfo"></div>
+  <div id="stats"></div>
+
+  <script>
+    // 🔑 Replace with your Firebase config
+   const firebaseConfig = {
+  apiKey: "AIzaSyCy3wdI31dGW869qdPg08-KDuVmEyICILE",
+  authDomain: "web--analytics.firebaseapp.com",
+  projectId: "web--analytics",
+  storageBucket: "web--analytics.firebasestorage.app",
+  messagingSenderId: "740756570650",
+  appId: "1:740756570650:web:d352ca5bcb75a9bcf947a3",
+  measurementId: "G-YQMTM0SVZQ",
+  databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app/"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 🆔 Get site ID from URL: ?site=mysite123
+    const urlParams = new URLSearchParams(window.location.search);
+    const siteId = urlParams.get("site") || "default";
+    document.getElementById("siteInfo").innerHTML = `Showing analytics for <b>${siteId}</b>`;
+
+    // 📊 Load stats
+    function loadStats() {
+      const statsDiv = document.getElementById("stats");
+      statsDiv.innerHTML = `<p>Loading data...</p>`;
+
+      db.ref("analytics/" + siteId).on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+          statsDiv.innerHTML = `<p>No data yet for <b>${siteId}</b>.</p>`;
+          return;
+        }
+
+        let totalViews = 0;
+        let visitors = new Set();
+
+        Object.keys(data).forEach((eventId) => {
+          const event = data[eventId];
+          totalViews++;
+          if (event.visitorId) visitors.add(event.visitorId);
+        });
+
+        statsDiv.innerHTML = `
+          <div class="card">🌍 Total Pageviews: <b>${totalViews}</b></div>
+          <div class="card">👤 Unique Visitors: <b>${visitors.size}</b></div>
+        `;
+      });
+    }
+
+    loadStats();
+  </script>
+</body>
+</html>
