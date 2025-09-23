@@ -1,6 +1,5 @@
 // tracker.js
 
-// 🔑 Replace with your Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCy3wdI31dGW869qdPg08-KDuVmEyICILE",
   authDomain: "web--analytics.firebaseapp.com",
