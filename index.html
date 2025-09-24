@@ -2,119 +2,164 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Analytics Dashboard (Debug Mode)</title>
+  <title>Live Analytics Dashboard</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-    h1 { font-size: 24px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-    th, td { padding: 10px; border-bottom: 1px solid #ddd; }
-    th { background: #eee; }
-    .error { color: red; margin-top: 20px; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+    body { font-family: 'Inter', sans-serif; background: #f3f4f6; margin:0; padding:20px; color:#111; }
+    h1 { text-align:center; margin-bottom:20px; color:#111827; }
+
+    .search-container { text-align:center; margin-bottom:40px; }
+    .search-container input { padding:12px 16px; width:220px; border-radius:10px; border:1px solid #ccc; font-size:1rem; }
+    .search-container button { padding:12px 20px; margin-left:10px; border:none; border-radius:10px; background:#2563eb; color:#fff; cursor:pointer; font-size:1rem; transition: background 0.3s; }
+    .search-container button:hover { background:#1d4ed8; }
+
+    .stats { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; margin-bottom:50px; }
+    .card { background:#fff; border-radius:16px; width:220px; padding:25px 20px; text-align:center; box-shadow:0 10px 20px rgba(0,0,0,0.08); transition: transform 0.3s, box-shadow 0.3s; }
+    .card:hover { transform:translateY(-6px); box-shadow:0 14px 28px rgba(0,0,0,0.12); }
+    .card .icon { font-size:36px; margin-bottom:12px; display:inline-block; padding:12px; border-radius:50%; background:#e0f2fe; color:#0284c7; }
+    .card h2 { margin:0; font-size:2.2rem; color:#2563eb; }
+    .card p { margin-top:8px; font-size:0.95rem; color:#6b7280; }
+
+    table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.06); margin-bottom:30px;}
+    th, td { padding:14px 16px; text-align:left; }
+    th { background:#2563eb; color:#fff; font-weight:600; }
+    tr:nth-child(even){ background:#f9fafb; }
+    tr:hover { background:#dbeafe; }
+
+    .btn { padding:12px 24px; background:#ef4444; color:#fff; border:none; border-radius:10px; cursor:pointer; font-size:1rem; transition: background 0.3s; }
+    .btn:hover { background:#dc2626; }
+
+    .error { color:red; text-align:center; margin-bottom:20px; }
+    @media (max-width:700px){ .stats { flex-direction:column; align-items:center; } .card{ width:80%; } }
   </style>
 </head>
 <body>
-  <h1>📊 Website Analytics (Debug)</h1>
-  <div>
-    <label>Site ID: </label>
-    <input type="text" id="siteIdInput" placeholder="Enter site ID" />
-    <button id="loadBtn">Load Analytics</button>
+  <h1>📊 Live Analytics Dashboard</h1>
+
+  <div class="search-container">
+    <input type="text" id="siteIdInput" placeholder="Enter Site ID" />
+    <button onclick="loadSite()">Load Analytics</button>
   </div>
   <div id="errorMsg" class="error"></div>
+
+  <div class="stats">
+    <div class="card">
+      <div class="icon">👁️</div>
+      <h2 id="totalViews">0</h2>
+      <p>Total Views</p>
+    </div>
+    <div class="card">
+      <div class="icon">🧑‍🤝‍🧑</div>
+      <h2 id="uniqueVisitors">0</h2>
+      <p>Unique Visitors</p>
+    </div>
+    <div class="card">
+      <div class="icon">⚡</div>
+      <h2 id="eventsCount">0</h2>
+      <p>Custom Events</p>
+    </div>
+  </div>
+
+  <h2>Recent Activity</h2>
   <table>
     <thead>
       <tr>
+        <th>Type</th>
         <th>URL</th>
         <th>Referrer</th>
         <th>User Agent</th>
         <th>Time</th>
       </tr>
     </thead>
-    <tbody id="analyticsTable"></tbody>
+    <tbody id="activityBody"></tbody>
   </table>
+
+  <button class="btn" onclick="clearAnalytics()">Clear Analytics</button>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-  // ✅ Replace with your Firebase config
+  // 🔑 Replace with your Firebase config
    const firebaseConfig = {
   apiKey: "AIzaSyCy3wdI31dGW869qdPg08-KDuVmEyICILE",
   authDomain: "web--analytics.firebaseapp.com",
+  databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "web--analytics",
   storageBucket: "web--analytics.firebasestorage.app",
   messagingSenderId: "740756570650",
   appId: "1:740756570650:web:d352ca5bcb75a9bcf947a3",
-  databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app/"
+  measurementId: "G-YQMTM0SVZQ"
 };
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-    console.log("✅ Firebase initialized in dashboard");
-  } else {
-    console.log("⚠️ Firebase already initialized");
-  }
 
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
-  const tableBody = document.getElementById("analyticsTable");
+
+  const totalViewsEl = document.getElementById("totalViews");
+  const uniqueVisitorsEl = document.getElementById("uniqueVisitors");
+  const eventsCountEl = document.getElementById("eventsCount");
+  const tbody = document.getElementById("activityBody");
   const errorDiv = document.getElementById("errorMsg");
-  const siteIdInput = document.getElementById("siteIdInput");
-  const loadBtn = document.getElementById("loadBtn");
+  const siteInput = document.getElementById("siteIdInput");
 
-  function clearTable() {
-    tableBody.innerHTML = "";
+  let currentRef = null;
+
+  function renderDashboard(data) {
+    const pageviews = data.filter(e => e.type === "pageview");
+    totalViewsEl.textContent = pageviews.length;
+
+    const unique = new Set(data.map(e => e.ref + e.url));
+    uniqueVisitorsEl.textContent = unique.size;
+
+    const events = data.filter(e => e.type === "event");
+    eventsCountEl.textContent = events.length;
+
+    tbody.innerHTML = "";
+    data.slice(-10).reverse().forEach(e => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${e.type}</td>
+        <td>${e.url || "-"}</td>
+        <td>${e.ref || "-"}</td>
+        <td>${e.userAgent || "-"}</td>
+        <td>${new Date(e.ts).toLocaleString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
   }
 
-  function showError(msg) {
-    errorDiv.textContent = msg;
-    console.error("Dashboard error:", msg);
-  }
-
-  function loadAnalytics(siteId) {
+  function loadSite() {
+    const siteId = siteInput.value.trim();
     if (!siteId) {
-      showError("Site ID is empty");
+      errorDiv.textContent = "Please enter a Site ID";
       return;
     }
-    errorDiv.textContent = ""; // clear error
+    errorDiv.textContent = "";
 
-    const ref = db.ref("analytics/" + siteId);
-    ref
-      .once("value")
-      .then(snapshot => {
-        const data = snapshot.val();
-        if (!data) {
-          showError(`No data found under analytics/${siteId}`);
-          return;
-        }
-        console.log("✅ Data fetched for site:", siteId, data);
-        clearTable();
+    // Remove previous listener
+    if (currentRef) currentRef.off();
 
-        Object.entries(data).forEach(([key, event]) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${event.url || "-"}</td>
-            <td>${event.referrer || "-"}</td>
-            <td>${event.userAgent || "-"}</td>
-            <td>${new Date(event.timestamp).toLocaleString()}</td>
-          `;
-          tableBody.appendChild(row);
-        });
-      })
-      .catch(err => {
-        showError("Error reading from Firebase: " + err.message);
-      });
+    currentRef = db.ref("analytics/" + siteId);
+    currentRef.on("value", snapshot => {
+      const dataObj = snapshot.val() || {};
+      const data = Object.values(dataObj).map(e => ({
+        type: e.type || "pageview",
+        url: e.url,
+        ref: e.referrer,
+        userAgent: e.userAgent,
+        ts: e.timestamp
+      }));
+      renderDashboard(data);
+    }, err => {
+      errorDiv.textContent = "Firebase error: " + err.message;
+    });
   }
 
-  loadBtn.addEventListener("click", () => {
-    const siteId = siteIdInput.value.trim();
-    loadAnalytics(siteId);
-  });
-
-  // Optionally load from URL param
-  const params = new URLSearchParams(window.location.search);
-  const siteFromUrl = params.get("site");
-  if (siteFromUrl) {
-    siteIdInput.value = siteFromUrl;
-    loadAnalytics(siteFromUrl);
+  function clearAnalytics() {
+    if (!currentRef) return;
+    currentRef.remove();
   }
   </script>
 </body>
