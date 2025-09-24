@@ -10,7 +10,6 @@
   storageBucket: "web--analytics.firebasestorage.app",
   messagingSenderId: "740756570650",
   appId: "1:740756570650:web:d352ca5bcb75a9bcf947a3",
-  measurementId: "G-YQMTM0SVZQ",
   databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
