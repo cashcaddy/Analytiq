@@ -30,10 +30,8 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // dashboard.js
-
-// ✅ Replace with your Firebase config
-  const firebaseConfig = {
+  // ✅ Replace with your Firebase config
+   const firebaseConfig = {
   apiKey: "AIzaSyCy3wdI31dGW869qdPg08-KDuVmEyICILE",
   authDomain: "web--analytics.firebaseapp.com",
   projectId: "web--analytics",
@@ -43,30 +41,29 @@
   databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
 
-if (!firebase.apps?.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+  const db = firebase.database();
+  const tableBody = document.getElementById("analyticsTable");
 
-const db = firebase.database();
-const tableBody = document.getElementById("analyticsTable");
+  // Change siteId to the same one you used in <script data-site="">
+  const siteId = "mysite123";
 
-// Change siteId to the same one you used in <script data-site="">
-const siteId = "mysite123";
-
-// Listen for new visits
-db.ref("analytics/" + siteId).on("child_added", (snapshot) => {
-  const data = snapshot.val();
-  const row = document.createElement("tr");
-  row.innerHTML = `
-    <td>${data.url}</td>
-    <td>${data.referrer}</td>
-    <td>${data.userAgent}</td>
-    <td>${new Date(data.timestamp).toLocaleString()}</td>
-  `;
-  tableBody.appendChild(row);
-});
-
+  // Listen for new visits
+  db.ref("analytics/" + siteId).on("child_added", (snapshot) => {
+    const data = snapshot.val();
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${data.url}</td>
+      <td>${data.referrer}</td>
+      <td>${data.userAgent}</td>
+      <td>${new Date(data.timestamp).toLocaleString()}</td>
+    `;
+    tableBody.appendChild(row);
+  });
   </script>
 </body>
 </html>
+
