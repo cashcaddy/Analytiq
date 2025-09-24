@@ -2,17 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Analytics Dashboard</title>
+  <title>Analytics Dashboard (Debug Mode)</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
     h1 { font-size: 24px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
     th, td { padding: 10px; border-bottom: 1px solid #ddd; }
     th { background: #eee; }
+    .error { color: red; margin-top: 20px; }
   </style>
 </head>
 <body>
-  <h1>📊 Website Analytics</h1>
+  <h1>📊 Website Analytics (Debug)</h1>
+  <div>
+    <label>Site ID: </label>
+    <input type="text" id="siteIdInput" placeholder="Enter site ID" />
+    <button id="loadBtn">Load Analytics</button>
+  </div>
+  <div id="errorMsg" class="error"></div>
   <table>
     <thead>
       <tr>
@@ -40,30 +47,75 @@
   appId: "1:740756570650:web:d352ca5bcb75a9bcf947a3",
   databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
-
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
+    console.log("✅ Firebase initialized in dashboard");
+  } else {
+    console.log("⚠️ Firebase already initialized");
   }
 
   const db = firebase.database();
   const tableBody = document.getElementById("analyticsTable");
+  const errorDiv = document.getElementById("errorMsg");
+  const siteIdInput = document.getElementById("siteIdInput");
+  const loadBtn = document.getElementById("loadBtn");
 
-  // Change siteId to the same one you used in <script data-site="">
-  const siteId = "mysite123";
+  function clearTable() {
+    tableBody.innerHTML = "";
+  }
 
-  // Listen for new visits
-  db.ref("analytics/" + siteId).on("child_added", (snapshot) => {
-    const data = snapshot.val();
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${data.url}</td>
-      <td>${data.referrer}</td>
-      <td>${data.userAgent}</td>
-      <td>${new Date(data.timestamp).toLocaleString()}</td>
-    `;
-    tableBody.appendChild(row);
+  function showError(msg) {
+    errorDiv.textContent = msg;
+    console.error("Dashboard error:", msg);
+  }
+
+  function loadAnalytics(siteId) {
+    if (!siteId) {
+      showError("Site ID is empty");
+      return;
+    }
+    errorDiv.textContent = ""; // clear error
+
+    const ref = db.ref("analytics/" + siteId);
+    ref
+      .once("value")
+      .then(snapshot => {
+        const data = snapshot.val();
+        if (!data) {
+          showError(`No data found under analytics/${siteId}`);
+          return;
+        }
+        console.log("✅ Data fetched for site:", siteId, data);
+        clearTable();
+
+        Object.entries(data).forEach(([key, event]) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${event.url || "-"}</td>
+            <td>${event.referrer || "-"}</td>
+            <td>${event.userAgent || "-"}</td>
+            <td>${new Date(event.timestamp).toLocaleString()}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+      })
+      .catch(err => {
+        showError("Error reading from Firebase: " + err.message);
+      });
+  }
+
+  loadBtn.addEventListener("click", () => {
+    const siteId = siteIdInput.value.trim();
+    loadAnalytics(siteId);
   });
+
+  // Optionally load from URL param
+  const params = new URLSearchParams(window.location.search);
+  const siteFromUrl = params.get("site");
+  if (siteFromUrl) {
+    siteIdInput.value = siteFromUrl;
+    loadAnalytics(siteFromUrl);
+  }
   </script>
 </body>
 </html>
-
