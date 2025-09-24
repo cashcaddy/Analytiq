@@ -1,7 +1,7 @@
 (function () {
   function init() {
-    // ✅ Your Firebase config
-   const firebaseConfig = {
+    // 🔑 Replace with your Firebase config
+     const firebaseConfig = {
   apiKey: "AIzaSyCy3wdI31dGW869qdPg08-KDuVmEyICILE",
   authDomain: "web--analytics.firebaseapp.com",
   projectId: "web--analytics",
@@ -13,6 +13,7 @@
 
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
+      console.log("✅ Firebase initialized");
     }
 
     const db = firebase.database();
@@ -21,7 +22,7 @@
     const scriptTag = document.currentScript;
     const siteId = scriptTag.getAttribute("data-site") || "default-site";
 
-    // Save visit
+    // Visit data
     const visit = {
       url: window.location.href,
       referrer: document.referrer || "direct",
@@ -29,10 +30,16 @@
       timestamp: Date.now(),
     };
 
-    db.ref("analytics/" + siteId).push(visit);
+    console.log("📡 Sending visit:", visit);
+
+    // Save visit
+    db.ref("analytics/" + siteId)
+      .push(visit)
+      .then(() => console.log("✅ Visit sent to Firebase under site:", siteId))
+      .catch((err) => console.error("❌ Error sending visit:", err));
   }
 
-  // ✅ Load Firebase SDK first
+  // Load Firebase SDKs
   const firebaseApp = document.createElement("script");
   firebaseApp.src = "https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js";
   firebaseApp.onload = () => {
