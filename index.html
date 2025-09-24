@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Website Analytics</title>
+  <title>Analytics Dashboard</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-    h1 { display: flex; align-items: center; font-size: 24px; }
+    h1 { font-size: 24px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-    th, td { padding: 10px 14px; border-bottom: 1px solid #ddd; text-align: left; }
+    th, td { padding: 10px; border-bottom: 1px solid #ddd; }
     th { background: #eee; }
   </style>
 </head>
@@ -25,17 +25,15 @@
     <tbody id="analyticsTable"></tbody>
   </table>
 
-  <!-- ✅ Firebase SDK -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-  <!-- ✅ Dashboard logic -->
   <script>
     // dashboard.js
 
-// ✅ Same Firebase config
-// 🔑 Replace with your Firebase config
-const firebaseConfig = {
+// ✅ Replace with your Firebase config
+  const firebaseConfig = {
   apiKey: "AIzaSyCy3wdI31dGW869qdPg08-KDuVmEyICILE",
   authDomain: "web--analytics.firebaseapp.com",
   projectId: "web--analytics",
@@ -46,7 +44,7 @@ const firebaseConfig = {
   databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
-// Initialize Firebase
+
 if (!firebase.apps?.length) {
   firebase.initializeApp(firebaseConfig);
 }
@@ -54,13 +52,12 @@ if (!firebase.apps?.length) {
 const db = firebase.database();
 const tableBody = document.getElementById("analyticsTable");
 
-// 🔹 Change siteId if you want to track different sites
+// Change siteId to the same one you used in <script data-site="">
 const siteId = "mysite123";
 
 // Listen for new visits
 db.ref("analytics/" + siteId).on("child_added", (snapshot) => {
   const data = snapshot.val();
-
   const row = document.createElement("tr");
   row.innerHTML = `
     <td>${data.url}</td>
