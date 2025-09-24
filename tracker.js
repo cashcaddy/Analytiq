@@ -20,8 +20,9 @@
 
     const db = firebase.database();
 
-    const scriptTag = document.currentScript;
-    const siteId = scriptTag.getAttribute("data-site") || "default-site";
+   const scriptTag = document.getElementById("tracker");
+const siteId = scriptTag ? scriptTag.getAttribute("data-site") : "default-site";
+
 
     const visit = {
       url: window.location.href,
