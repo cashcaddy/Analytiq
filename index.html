@@ -32,9 +32,125 @@
 
     .error { color:red; text-align:center; margin-bottom:20px; }
     @media (max-width:700px){ .stats { flex-direction:column; align-items:center; } .card{ width:80%; } }
+
+    /* Modal Styles */
+    .modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  animation: fadeIn 0.3s;
+  padding: 20px;
+}
+.modal.show {
+  display: block;
+}
+.modal-content {
+  position: relative;
+  background: #fff;
+  margin: 10% auto;
+  padding: 30px 20px;
+  width: 100%;
+  max-width: 1000px;
+  border-radius: 20px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.25);
+  animation: slideUp 0.4s ease-out;
+}
+
+.modal-header {
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  padding: 15px;
+  border-radius: 16px 16px 0 0;
+  color: #fff;
+  text-align: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.modal-body {
+  padding: 20px 10px 0 10px;
+}
+
+.steps {
+  padding-left: 20px;
+}
+
+.steps li {
+  margin: 12px 0;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.step-icon {
+  margin-right: 10px;
+  font-size: 1.2rem;
+}
+
+code {
+  display: block;
+  background: #f3f4f6;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  overflow-x: auto;
+}
+
+.close-modal {
+  position: absolute;
+  right: 20px;
+  top: 15px;
+  font-size: 26px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: color 0.3s, transform 0.3s;
+}
+
+.close-modal:hover {
+  color: #111827;
+  transform: scale(1.2);
+}
+
+/* Animations */
+@keyframes slideUp {
+  0% { transform: translateY(50px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  0% { background-color: rgba(0,0,0,0); }
+  100% { background-color: rgba(0,0,0,0.6); }
+}
   </style>
 </head>
 <body>
+  <!-- Welcome Modal -->
+  <div id="welcomeModal" class="modal">
+     <span class="close-modal">&times;</span>
+  <div class="modal-content">
+   
+    <div class="modal-header">
+      <h2>🚀 Welcome to Analytics Dashboard</h2>
+    </div>
+    <div class="modal-body">
+      <p>This dashboard provides real-time analytics for your website. To get started:</p>
+      <ol class="steps">
+        <li><span class="step-icon">1️⃣</span> Add this code in your website</li>
+        <li><span class="step-icon">2️⃣</span> 
+          <code>&lt;script id="tracker" src="https://web-analytics-weld.vercel.app/tracker.js" data-site="YOUR_SITE_ID"&gt;&lt;/script&gt;</code>
+        </li>
+        <li><span class="step-icon">3️⃣</span> Start tracking visitors!</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
   <h1>📊 Live Analytics Dashboard</h1>
 
   <div class="search-container">
@@ -82,85 +198,106 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-  // 🔑 Replace with your Firebase config
-   const firebaseConfig = {
-  apiKey: "AIzaSyCy3wdI31dGW869qdPg08-KDuVmEyICILE",
-  authDomain: "web--analytics.firebaseapp.com",
-  databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "web--analytics",
-  storageBucket: "web--analytics.firebasestorage.app",
-  messagingSenderId: "740756570650",
-  appId: "1:740756570650:web:d352ca5bcb75a9bcf947a3",
-  measurementId: "G-YQMTM0SVZQ"
-};
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCy3wdI31dGW869qdPg08-KDuVmEyICILE",
+      authDomain: "web--analytics.firebaseapp.com",
+      databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "web--analytics",
+      storageBucket: "web--analytics.firebasestorage.app",
+      messagingSenderId: "740756570650",
+      appId: "1:740756570650:web:d352ca5bcb75a9bcf947a3",
+      measurementId: "G-YQMTM0SVZQ"
+    };
 
-  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-  const totalViewsEl = document.getElementById("totalViews");
-  const uniqueVisitorsEl = document.getElementById("uniqueVisitors");
-  const eventsCountEl = document.getElementById("eventsCount");
-  const tbody = document.getElementById("activityBody");
-  const errorDiv = document.getElementById("errorMsg");
-  const siteInput = document.getElementById("siteIdInput");
+    const totalViewsEl = document.getElementById("totalViews");
+    const uniqueVisitorsEl = document.getElementById("uniqueVisitors");
+    const eventsCountEl = document.getElementById("eventsCount");
+    const tbody = document.getElementById("activityBody");
+    const errorDiv = document.getElementById("errorMsg");
+    const siteInput = document.getElementById("siteIdInput");
 
-  let currentRef = null;
+    // Modal elements
+    const modal = document.getElementById("welcomeModal");
+    const closeBtn = document.querySelector(".close-modal");
 
-  function renderDashboard(data) {
-    const pageviews = data.filter(e => e.type === "pageview");
-    totalViewsEl.textContent = pageviews.length;
-
-    const unique = new Set(data.map(e => e.ref + e.url));
-    uniqueVisitorsEl.textContent = unique.size;
-
-    const events = data.filter(e => e.type === "event");
-    eventsCountEl.textContent = events.length;
-
-    tbody.innerHTML = "";
-    data.slice(-10).reverse().forEach(e => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${e.type}</td>
-        <td>${e.url || "-"}</td>
-        <td>${e.ref || "-"}</td>
-        <td>${e.userAgent || "-"}</td>
-        <td>${new Date(e.ts).toLocaleString()}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function loadSite() {
-    const siteId = siteInput.value.trim();
-    if (!siteId) {
-      errorDiv.textContent = "Please enter a Site ID";
-      return;
+    // Show modal when page loads
+    window.onload = function() {
+      modal.classList.add("show");
     }
-    errorDiv.textContent = "";
 
-    // Remove previous listener
-    if (currentRef) currentRef.off();
+    // Close modal when clicking the close button
+    closeBtn.onclick = function() {
+      modal.classList.remove("show");
+    }
 
-    currentRef = db.ref("analytics/" + siteId);
-    currentRef.on("value", snapshot => {
-      const dataObj = snapshot.val() || {};
-      const data = Object.values(dataObj).map(e => ({
-        type: e.type || "pageview",
-        url: e.url,
-        ref: e.referrer,
-        userAgent: e.userAgent,
-        ts: e.timestamp
-      }));
-      renderDashboard(data);
-    }, err => {
-      errorDiv.textContent = "Firebase error: " + err.message;
-    });
-  }
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.classList.remove("show");
+      }
+    }
 
-  function clearAnalytics() {
-    if (!currentRef) return;
-    currentRef.remove();
-  }
+    let currentRef = null;
+
+    function renderDashboard(data) {
+      const pageviews = data.filter(e => e.type === "pageview");
+      totalViewsEl.textContent = pageviews.length;
+
+      const unique = new Set(data.map(e => e.ref + e.url));
+      uniqueVisitorsEl.textContent = unique.size;
+
+      const events = data.filter(e => e.type === "event");
+      eventsCountEl.textContent = events.length;
+
+      tbody.innerHTML = "";
+      data.slice(-10).reverse().forEach(e => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${e.type}</td>
+          <td>${e.url || "-"}</td>
+          <td>${e.ref || "-"}</td>
+          <td>${e.userAgent || "-"}</td>
+          <td>${new Date(e.ts).toLocaleString()}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function loadSite() {
+      const siteId = siteInput.value.trim();
+      if (!siteId) {
+        errorDiv.textContent = "Please enter a Site ID";
+        return;
+      }
+      errorDiv.textContent = "";
+
+      // Remove previous listener
+      if (currentRef) currentRef.off();
+
+      currentRef = db.ref("analytics/" + siteId);
+      currentRef.on("value", snapshot => {
+        const dataObj = snapshot.val() || {};
+        const data = Object.values(dataObj).map(e => ({
+          type: e.type || "pageview",
+          url: e.url,
+          ref: e.referrer,
+          userAgent: e.userAgent,
+          ts: e.timestamp
+        }));
+        renderDashboard(data);
+      }, err => {
+        errorDiv.textContent = "Firebase error: " + err.message;
+      });
+    }
+
+    function clearAnalytics() {
+      if (!currentRef) return;
+      currentRef.remove();
+    }
   </script>
 </body>
 </html>
