@@ -1,5 +1,20 @@
 // tracker.js
 
+
+// tracker.js
+
+// ✅ Load Firebase SDK dynamically if not already loaded
+(function () {
+  function loadScript(src, callback) {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = callback;
+    document.head.appendChild(s);
+  }
+
+  function init() {
+    // ✅ Your Firebase config
+   // 🔑 Replace with your Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCy3wdI31dGW869qdPg08-KDuVmEyICILE",
   authDomain: "web--analytics.firebaseapp.com",
@@ -11,38 +26,29 @@ const firebaseConfig = {
   databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
-// Load Firebase
-(function() {
-  if (!window.firebase) {
-    console.error("Firebase SDK not loaded!");
-    return;
-  }
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+    if (!firebase.apps?.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
 
-  // 🔎 Find the script tag that loaded this file
-  const currentScript = document.currentScript;
-  const siteId = currentScript.getAttribute("data-site") || "default";
+    const db = firebase.database();
 
-  // 👤 Generate or fetch visitorId
-  let visitorId = localStorage.getItem("visitorId");
-  if (!visitorId) {
-    visitorId = "v-" + Math.random().toString(36).substring(2, 12);
-    localStorage.setItem("visitorId", visitorId);
-  }
+    // Get site ID from <script data-site="">
+    const scriptTag = document.currentScript;
+    const siteId = scriptTag.getAttribute("data-site") || "default-site";
 
-  // 📅 Track pageview
-  function trackPageview() {
-    const event = {
-      type: "pageview",
+    // Save visit
+    const visit = {
       url: window.location.href,
-      referrer: document.referrer || null,
+      referrer: document.referrer || "direct",
+      userAgent: navigator.userAgent,
       timestamp: Date.now(),
-      visitorId: visitorId
     };
-    db.ref("analytics/" + siteId).push(event);
+
+    db.ref("analytics/" + siteId).push(visit);
   }
 
-  // 🚀 Fire on load
-  window.addEventListener("load", trackPageview);
+  // Load Firebase scripts first
+  loadScript("https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js", () => {
+    loadScript("https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js", init);
+  });
 })();
