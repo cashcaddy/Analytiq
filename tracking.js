@@ -1,9 +1,7 @@
-// tracker.js
-
 (function () {
   function init() {
-    // ✅ Your Firebase config (replace with your real values from Firebase console)
-  const firebaseConfig = {
+    // ✅ Your Firebase config
+   const firebaseConfig = {
   apiKey: "AIzaSyCy3wdI31dGW869qdPg08-KDuVmEyICILE",
   authDomain: "web--analytics.firebaseapp.com",
   projectId: "web--analytics",
@@ -13,7 +11,7 @@
   databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
-    if (!firebase.apps?.length) {
+    if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
 
