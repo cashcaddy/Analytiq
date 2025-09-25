@@ -1,28 +1,16 @@
 (function () {
-  function init() {
+  function init(cfg) {
     console.log("🚀 tracker.js init started");
 
-    const firebaseConfig = {
-  apiKey: "AIzaSyCy3wdI31dGW869qdPg08-KDuVmEyICILE",
-  authDomain: "web--analytics.firebaseapp.com",
-  databaseURL: "https://web--analytics-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "web--analytics",
-  storageBucket: "web--analytics.firebasestorage.app",
-  messagingSenderId: "740756570650",
-  appId: "1:740756570650:web:d352ca5bcb75a9bcf947a3",
-  measurementId: "G-YQMTM0SVZQ"
-};
-
     if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+      firebase.initializeApp(cfg);
       console.log("✅ Firebase initialized in tracker.js");
     }
 
     const db = firebase.database();
 
-   const scriptTag = document.getElementById("tracker");
-const siteId = scriptTag ? scriptTag.getAttribute("data-site") : "default-site";
-
+    const scriptTag = document.currentScript;
+    const siteId = scriptTag.getAttribute("data-site") || "default-site";
 
     const visit = {
       url: window.location.href,
@@ -31,11 +19,11 @@ const siteId = scriptTag ? scriptTag.getAttribute("data-site") : "default-site";
       timestamp: Date.now(),
     };
 
-    console.log("📡 Attempting to send visit:", visit);
+    console.log("📡 Sending visit:", visit);
 
     db.ref("analytics/" + siteId)
       .push(visit)
-      .then(() => console.log("✅ Visit saved successfully under site:", siteId))
+      .then(() => console.log("✅ Visit saved under site:", siteId))
       .catch((err) => console.error("❌ Firebase push error:", err));
   }
 
@@ -45,7 +33,13 @@ const siteId = scriptTag ? scriptTag.getAttribute("data-site") : "default-site";
   firebaseApp.onload = () => {
     const firebaseDB = document.createElement("script");
     firebaseDB.src = "https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js";
-    firebaseDB.onload = init;
+    firebaseDB.onload = () => {
+      // Fetch shared config
+      fetch("https://analytiq-omega.vercel.app/firebase-config.json")
+        .then(res => res.json())
+        .then(init)
+        .catch(err => console.error("❌ Failed to load config:", err));
+    };
     document.head.appendChild(firebaseDB);
   };
   document.head.appendChild(firebaseApp);
