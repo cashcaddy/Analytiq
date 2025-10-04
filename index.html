@@ -10,13 +10,14 @@
     header { background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; padding:20px 40px; text-align:center; }
     header h1 { margin:0; font-size:26px; font-weight:600; }
     .controls { margin:20px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
-    .controls input, .controls button { padding:10px 14px; font-size:14px; border-radius:8px; border:1px solid #ddd; }
+    .controls input, .controls button, .controls select { padding:10px 14px; font-size:14px; border-radius:8px; border:1px solid #ddd; }
     .controls button { background:#6366f1; color:#fff; border:none; cursor:pointer; transition:background 0.2s; }
     .controls button:hover { background:#4f46e5; }
     .error { color:red; text-align:center; margin:10px 0; }
     .dashboard { display:grid; grid-template-columns:2fr 1fr; gap:20px; margin:20px; }
     .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:20px; }
-    .card { background:#fff; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.08); text-align:center; }
+    .card { background:#fff; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.08); text-align:center; transition:transform 0.2s, box-shadow 0.2s; }
+    .card:hover { transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.12); }
     .card h2 { font-size:18px; margin:0 0 8px; font-weight:600; }
     .card p { font-size:28px; margin:0; font-weight:600; color:#4f46e5; }
     canvas { background:#fff; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.08); }
@@ -64,6 +65,11 @@
     <button id="loadBtn">Load Analytics</button>
     <button id="openModalBtn">View Events</button>
     <button onclick="openWelcome()">❔ Setup Guide</button>
+    <select id="timeRange">
+      <option value="1">Today</option>
+      <option value="7">Last 7 Days</option>
+      <option value="30">Last 30 Days</option>
+    </select>
   </div>
   <div id="errorMsg" class="error"></div>
 
@@ -74,6 +80,7 @@
         <div class="card"><h2>Visits</h2><p id="visits">0</p></div>
         <div class="card"><h2>Unique Visitors</h2><p id="uniqueVisitors">0</p></div>
         <div class="card"><h2>Pageviews</h2><p id="pageviews">0</p></div>
+        <div class="card"><h2>Active Visitors</h2><p id="activeVisitors">0</p></div>
       </div>
       <canvas id="trafficChart" height="120" style="margin-top:20px;"></canvas>
     </div>
@@ -81,10 +88,12 @@
       <div class="card"><h2>Top Pages</h2><ul id="topPages" class="list"></ul></div>
       <div class="card" style="margin-top:20px;"><h2>Top Referrers</h2><ul id="topReferrers" class="list"></ul></div>
       <div class="card" style="margin-top:20px;"><h2>Top Browsers</h2><ul id="topBrowsers" class="list"></ul></div>
+      <div class="card" style="margin-top:20px;"><h2>Devices</h2><ul id="topDevices" class="list"></ul></div>
     </div>
   </div>
 
   <button class="btn" onclick="clearAnalytics()">Clear Analytics</button>
+  <button id="exportBtn" class="btn">📁 Export CSV</button>
 
   <!-- Events Modal -->
   <div id="eventsModal" class="modal">
@@ -97,10 +106,11 @@
     </div>
   </div>
 
-  <!-- Firebase + Chart.js -->
+  <!-- Firebase + Chart.js + Confetti -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 
   <script>
     let db, chart, cachedData=null, currentRef=null;
@@ -124,6 +134,8 @@
     const topPagesEl=document.getElementById("topPages");
     const topReferrersEl=document.getElementById("topReferrers");
     const topBrowsersEl=document.getElementById("topBrowsers");
+    const topDevicesEl=document.getElementById("topDevices");
+    const activeVisitorsEl=document.getElementById("activeVisitors");
     const openModalBtn=document.getElementById("openModalBtn");
     const eventsModal=document.getElementById("eventsModal");
     const closeModal=document.getElementById("closeModal");
@@ -147,34 +159,52 @@
       });
     }
 
-    function loadAnalytics(siteId){
+    function loadAnalytics(siteId, days=7){
       if(!siteId){ showError("Please enter a Site ID"); return;}
       errorDiv.textContent=""; if(currentRef) currentRef.off();
       currentRef=db.ref("analytics/"+siteId);
       currentRef.on("value",snap=>{
         const data=snap.val(); if(!data){ showError("No data for this site"); return;}
         cachedData=data;
-        let visits=0,unique=new Set(),pageviews=0,daily={},pages={},refs={},browsers={};
-        Object.values(data).forEach(e=>{
+        const cutoff = Date.now() - days*24*60*60*1000;
+        const filteredData=Object.fromEntries(Object.entries(data).filter(([_,e])=>e.timestamp>cutoff));
+        let visits=0,unique=new Set(),pageviews=0,daily={},pages={},refs={},browsers={},devices={};
+        Object.values(filteredData).forEach(e=>{
           visits++; pageviews++; unique.add(e.userAgent||"unknown");
           const d=new Date(e.timestamp).toLocaleDateString();
           daily[d]=(daily[d]||0)+1;
           pages[e.url||"unknown"]=(pages[e.url||"unknown"]||0)+1;
           refs[e.referrer||"direct"]=(refs[e.referrer||"direct"]||0)+1;
-          const agent=e.userAgent||"unknown"; let b="Other";
-          if(agent.includes("Chrome")) b="Chrome"; else if(agent.includes("Firefox")) b="Firefox";
-          else if(agent.includes("Safari")&&!agent.includes("Chrome")) b="Safari"; else if(agent.includes("Edge")) b="Edge";
+          const agent=e.userAgent||"unknown"; 
+          let b="Other";
+          if(agent.includes("Chrome")) b="Chrome";
+          else if(agent.includes("Firefox")) b="Firefox";
+          else if(agent.includes("Safari")&&!agent.includes("Chrome")) b="Safari";
+          else if(agent.includes("Edge")) b="Edge";
           browsers[b]=(browsers[b]||0)+1;
+
+          let deviceType="Desktop";
+          if(/Mobile|Android|iPhone/i.test(agent)) deviceType="Mobile";
+          else if(/Tablet|iPad/i.test(agent)) deviceType="Tablet";
+          devices[deviceType]=(devices[deviceType]||0)+1;
         });
         visitsEl.textContent=visits; uniqueVisitorsEl.textContent=unique.size; pageviewsEl.textContent=pageviews;
-        renderList(topPagesEl,pages); renderList(topReferrersEl,refs); renderList(topBrowsersEl,browsers);
+        renderList(topPagesEl,pages); renderList(topReferrersEl,refs); renderList(topBrowsersEl,browsers); renderList(topDevicesEl,devices);
+
         const labels=Object.keys(daily),values=Object.values(daily);
         if(chart) chart.destroy(); const ctx=document.getElementById("trafficChart").getContext("2d");
         chart=new Chart(ctx,{type:"line",data:{labels,datasets:[{label:"Visits",data:values,borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,0.2)",fill:true,tension:0.3}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+
+        // Active Visitors
+        setInterval(() => {
+          const now = Date.now();
+          const active = Object.values(filteredData).filter(e => now - e.timestamp < 300000);
+          activeVisitorsEl.textContent = active.length;
+        }, 5000);
       },err=>showError("Firebase error: "+err.message));
     }
 
-    document.getElementById("loadBtn").onclick=()=>loadAnalytics(siteIdInput.value.trim());
+    document.getElementById("loadBtn").onclick=()=>loadAnalytics(siteIdInput.value.trim(), parseInt(document.getElementById("timeRange").value));
     openModalBtn.onclick=()=>{ if(cachedData){renderTable(cachedData); eventsModal.style.display="block";} else showError("Load analytics first!");};
     closeModal.onclick=()=>eventsModal.style.display="none";
     window.onclick=e=>{ if(e.target===eventsModal) eventsModal.style.display="none"; if(e.target===welcomeModal) welcomeModal.style.display="none";};
@@ -184,8 +214,27 @@
     function openWelcome(){ welcomeModal.style.display="block"; }
     closeWelcome.onclick=()=>welcomeModal.style.display="none";
     copyBtn.onclick=()=>{ navigator.clipboard.writeText(scriptCode.textContent).then(()=>{copyBtn.textContent="✅ Copied!"; setTimeout(()=>copyBtn.textContent="📋 Copy",1500);});};
-    window.onload=()=>openWelcome();
 
+    // Export CSV
+    document.getElementById("exportBtn").onclick = () => {
+      if(!cachedData) return showError("No data loaded!");
+      const rows=[["URL","Referrer","User Agent","Timestamp"]];
+      Object.values(cachedData).forEach(e=>rows.push([e.url,e.referrer,e.userAgent,new Date(e.timestamp).toLocaleString()]));
+      const csv=rows.map(r=>r.join(",")).join("\n");
+      const blob=new Blob([csv],{type:"text/csv"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download="analytics.csv";
+      a.click();
+    };
+
+    // On load: confetti then welcome modal
+    window.onload=()=>{
+      confetti({ particleCount:100, spread:60, origin:{ y:0.6 } });
+      openWelcome();
+    };
+
+    // Persistent Site ID from URL
     const params=new URLSearchParams(window.location.search);
     const siteFromUrl=params.get("site"); if(siteFromUrl){ siteIdInput.value=siteFromUrl; loadAnalytics(siteFromUrl);}
   </script>
