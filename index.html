@@ -1,242 +1,620 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Analytiq Dashboard</title>
+  <meta charset="utf-8" />
+  <title>Pulse — New Analytiq Experience</title>
+
+  <!-- External libs -->
   <script id="tracker" src="https://analytiq-omega.vercel.app/tracker.js" data-site="demo_Site"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-    body { font-family:'Inter',sans-serif; background:#f9fafb; margin:0; color:#111827; }
-    header { background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; padding:20px 40px; text-align:center; }
-    header h1 { margin:0; font-size:26px; font-weight:600; }
-    .controls { margin:20px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
-    .controls input, .controls button, .controls select { padding:10px 14px; font-size:14px; border-radius:8px; border:1px solid #ddd; }
-    .controls button { background:#6366f1; color:#fff; border:none; cursor:pointer; transition:background 0.2s; }
-    .controls button:hover { background:#4f46e5; }
-    .error { color:red; text-align:center; margin:10px 0; }
-    .dashboard { display:grid; grid-template-columns:2fr 1fr; gap:20px; margin:20px; }
-    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:20px; }
-    .card { background:#fff; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.08); text-align:center; transition:transform 0.2s, box-shadow 0.2s; }
-    .card:hover { transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.12); }
-    .card h2 { font-size:18px; margin:0 0 8px; font-weight:600; }
-    .card p { font-size:28px; margin:0; font-weight:600; color:#4f46e5; }
-    canvas { background:#fff; padding:20px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.08); }
-    .list { list-style:none; padding:0; margin:0; }
-    .list li { padding:8px 0; border-bottom:1px solid #eee; display:flex; justify-content:space-between; font-size:14px; }
-    .list li:last-child{ border-bottom:none; }
-    .btn { padding:10px 20px; background:#ef4444; color:#fff; border:none; border-radius:8px; cursor:pointer; margin:20px auto; display:block; }
-    .btn:hover { background:#dc2626; }
-    .modal{ display:none; position:fixed; z-index:1000; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(2px);}
-    .modal-content{ background:#fff; margin:5% auto; padding:20px; border-radius:16px; width:90%; max-width:1000px;
-      box-shadow:0 10px 25px rgba(0,0,0,0.2); animation:fadeIn 0.3s ease; }
-    @keyframes fadeIn{from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);}}
-    .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
-    .modal-header h2{ margin:0; font-size:20px; font-weight:600;}
-    .close{ cursor:pointer; font-size:24px; color:#555;}
-    .close:hover{ color:#111;}
-    table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 6px 16px rgba(0,0,0,0.06);}
-    th,td { padding:12px 16px; border-bottom:1px solid #eee; text-align:left; }
-    th { background:#f3f4f6; font-weight:600; }
-    #welcomeModal .modal-content{ max-width:700px; padding:30px; }
-    .modal-header-guide{ background:linear-gradient(90deg,#2563eb,#3b82f6); padding:15px; border-radius:12px; color:#fff; text-align:center;}
-    code{ display:block; background:#f3f4f6; padding:8px 10px; border-radius:6px; margin:8px 0;}
-    #copyBtn{ margin-top:10px; padding:6px 12px; background:#2563eb; border:none; border-radius:6px; color:#fff; cursor:pointer;}
-    #copyBtn:hover{ background:#1d4ed8;}
-  </style>
-</head>
-<body>
-  <!-- Welcome Modal -->
-  <div id="welcomeModal" class="modal">
-   <span class="close" id="closeWelcome">&times;</span>
-    <div class="modal-content">
-      <div class="modal-header-guide"><h2>🚀 Welcome to Analytiq Dashboard</h2></div>
-      <p>Track your website traffic with ease! Just add this snippet to your site:</p>
-      <code id="scriptCode">&lt;script id="tracker" src="https://analytiq-omega.vercel.app/tracker.js" data-site="YOUR_SITE_ID"&gt;&lt;/script&gt;</code>
-      <button id="copyBtn">📋 Copy</button>
-    </div>
-  </div>
-
-  <!-- Header -->
-  <header><h1>📊 Analytiq Dashboard</h1></header>
-
-  <!-- Controls -->
-  <div class="controls">
-    <input type="text" id="siteIdInput" placeholder="Enter Site ID" />
-    <button id="loadBtn">Load Analytics</button>
-    <button id="openModalBtn">View Events</button>
-    <button onclick="openWelcome()">❔ Setup Guide</button>
-    <select id="timeRange">
-      <option value="1">Today</option>
-      <option value="7">Last 7 Days</option>
-      <option value="30">Last 30 Days</option>
-    </select>
-  </div>
-  <div id="errorMsg" class="error"></div>
-
-  <!-- Dashboard -->
-  <div class="dashboard">
-    <div>
-      <div class="stats">
-        <div class="card"><h2>Visits</h2><p id="visits">0</p></div>
-        <div class="card"><h2>Unique Visitors</h2><p id="uniqueVisitors">0</p></div>
-        <div class="card"><h2>Pageviews</h2><p id="pageviews">0</p></div>
-        <div class="card"><h2>Active Visitors</h2><p id="activeVisitors">0</p></div>
-      </div>
-      <canvas id="trafficChart" height="120" style="margin-top:20px;"></canvas>
-    </div>
-    <div>
-      <div class="card"><h2>Top Pages</h2><ul id="topPages" class="list"></ul></div>
-      <div class="card" style="margin-top:20px;"><h2>Top Referrers</h2><ul id="topReferrers" class="list"></ul></div>
-      <div class="card" style="margin-top:20px;"><h2>Top Browsers</h2><ul id="topBrowsers" class="list"></ul></div>
-      <div class="card" style="margin-top:20px;"><h2>Devices</h2><ul id="topDevices" class="list"></ul></div>
-    </div>
-  </div>
-
-  <button class="btn" onclick="clearAnalytics()">Clear Analytics</button>
-  <button id="exportBtn" class="btn">📁 Export CSV</button>
-
-  <!-- Events Modal -->
-  <div id="eventsModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header"><h2>Detailed Events</h2><span class="close" id="closeModal">&times;</span></div>
-      <table>
-        <thead><tr><th>URL</th><th>Referrer</th><th>User Agent</th><th>Time</th></tr></thead>
-        <tbody id="analyticsTable"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Firebase + Chart.js + Confetti -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 
-  <script>
-    let db, chart, cachedData=null, currentRef=null;
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-    function initFirebase() {
-      fetch("/firebase-config.json")
-        .then(res => res.json())
-        .then(cfg => {
-          if (!firebase.apps.length) firebase.initializeApp(cfg);
-          db = firebase.database();
-        });
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <style>
+    :root{
+      --bg:#0f1721;           /* deep navy */
+      --surface:#0b1220;
+      --card:#07101a;
+      --muted:#9aa7b2;
+      --glass: rgba(255,255,255,0.03);
+      --accent:#06b6d4;       /* teal */
+      --accent-2:#fb923c;     /* warm orange */
+      --white:#ecf8fb;
+      --radius:14px;
+      --glass-2: rgba(255,255,255,0.025);
+      --shadow: 0 8px 30px rgba(2,6,23,0.6);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial; background:linear-gradient(180deg,var(--bg),#05121a); color:var(--white); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+
+    /* App shell */
+    .app { display:flex; min-height:100vh; }
+    aside.sidebar { width:260px; background:linear-gradient(180deg,var(--surface),#071a25); padding:28px 20px; box-shadow: 10px 0 30px rgba(0,0,0,0.6); }
+    .brand { display:flex; gap:12px; align-items:center; margin-bottom:18px; }
+    .logo { width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#7c3aed); display:flex;align-items:center;justify-content:center;font-weight:700;color:#012; box-shadow:0 6px 16px rgba(6,182,212,0.12); }
+    .brand h1{ font-size:16px; margin:0; font-weight:700; letter-spacing:-0.2px; color:var(--white); }
+    .brand p{ margin:0; font-size:12px; color:var(--muted); }
+
+    nav.menu { margin-top:18px; display:flex;flex-direction:column; gap:8px; }
+    .menu a { display:flex; align-items:center; gap:10px; padding:10px 12px; color:var(--muted); text-decoration:none; border-radius:10px; font-size:14px; }
+    .menu a.active, .menu a:hover { background:var(--glass); color:var(--white); box-shadow: inset 0 1px 0 rgba(255,255,255,0.02); }
+
+    .sidebar-footer { margin-top:auto; font-size:13px; color:var(--muted); }
+
+    /* Main content */
+    main.content { flex:1; padding:26px 32px; display:flex; flex-direction:column; gap:18px; }
+
+    /* Topbar */
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .search { display:flex; gap:10px; align-items:center; }
+    .input, .select, .btn { background:var(--glass-2); border:1px solid rgba(255,255,255,0.03); padding:10px 12px; border-radius:10px; color:var(--white); font-size:14px; }
+    .input::placeholder{ color:rgba(236,248,251,0.4); }
+    .btn.primary{ background:linear-gradient(90deg,var(--accent),#0891b2); border:none; color:#001218; font-weight:700; padding:10px 14px; cursor:pointer; }
+    .btn.ghost{ background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03); cursor:pointer; }
+
+    /* Grid */
+    .grid { display:grid; grid-template-columns:2fr 1fr; gap:18px; align-items:start; }
+    .cards { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; margin-bottom:10px; }
+    .card { background:linear-gradient(180deg,var(--card), rgba(10,18,25,0.7)); padding:14px; border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid rgba(255,255,255,0.02); }
+
+    .metric { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .metric .left { display:flex; flex-direction:column; gap:4px; }
+    .metric .label { font-size:13px; color:var(--muted); }
+    .metric .value { font-weight:700; font-size:20px; color:var(--white); }
+
+    .sparkline { height:54px; width:100%; margin-top:8px; }
+
+    /* Chart container */
+    .chartWrap { background:linear-gradient(180deg,rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:16px; border-radius:12px; }
+    canvas{ background:transparent !important; }
+
+    /* Right column lists */
+    .list { display:flex; flex-direction:column; gap:10px; }
+    .list .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px; border-radius:10px; background:transparent; border:1px solid rgba(255,255,255,0.02); }
+    .tag { padding:6px 8px; border-radius:8px; font-size:12px; font-weight:600; color:var(--white); background:linear-gradient(90deg,var(--accent),#0891b2); }
+
+    /* Table */
+    table.events { width:100%; border-collapse:collapse; margin-top:12px; font-size:13px; }
+    table.events th, table.events td { text-align:left; padding:10px 8px; color:var(--white); border-bottom:1px solid rgba(255,255,255,0.03); }
+    .muted { color:var(--muted); font-weight:500; }
+
+    /* Modals */
+    .modal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(2,6,23,0.6), rgba(2,6,23,0.85)); z-index:1000; padding:20px; }
+    .modal .box { width:100%; max-width:980px; background:linear-gradient(180deg,#071021, #081424); padding:18px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); box-shadow:var(--shadow); }
+
+    /* small screens */
+    @media (max-width:980px){
+      aside.sidebar{ display:none; }
+      .grid { grid-template-columns:1fr; }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width:600px){
+      .cards { grid-template-columns: 1fr; }
+    }
+
+    /* micro */
+    .muted-small{ color:var(--muted); font-size:12px; }
+    .pill { padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px; display:inline-flex; gap:8px; align-items:center; }
+
+    /* CTA strip */
+    .cta-strip{ margin:8px 0; background:linear-gradient(90deg, rgba(6,182,212,0.06), rgba(251,146,60,0.03)); padding:12px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="brand">
+        <div class="logo">P</div>
+        <div>
+          <h1>Pulse</h1>
+          <p>Realtime analytics • redesigned</p>
+        </div>
+      </div>
+
+      <nav class="menu">
+        <a class="active" href="#" data-route="dashboard">Dashboard</a>
+        <a href="#" data-route="events">Events</a>
+        
+      </nav>
+
+      <div class="sidebar-footer muted-small" style="margin-top:22px;">
+        <div>Team: <strong style="color:var(--white)">Demo</strong></div>
+        <div style="margin-top:8px;">Version 2.0 • Built for conversion</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="content">
+
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div style="display:flex; gap:12px; align-items:center;">
+          <div class="input" style="display:flex; gap:8px; align-items:center;">
+            <input id="siteIdInput" class="input" placeholder="Site ID or demo (e.g. demo_site)" style="background:transparent;border:none;outline:none;color:var(--white);min-width:220px;">
+            <button id="loadBtn" class="btn primary">Load</button>
+          </div>
+
+          <div style="display:flex; gap:8px;">
+            <select id="timeRange" class="select input" title="Time range">
+              <option value="1">Today</option>
+              <option value="7">7 days</option>
+              <option value="30">30 days</option>
+            </select>
+
+            <button id="openModalBtn" class="btn ghost">View Events</button>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; align-items:center;">
+          <div class="muted-small">Active <span id="activeVisitors" class="tag" style="background:linear-gradient(90deg,var(--accent-2),#fb8a3a);">0</span></div>
+          <button id="exportBtn" class="btn ghost">Export CSV</button>
+        </div>
+      </div>
+
+      <!-- CTA strip -->
+      <div class="cta-strip">
+        <div>
+          <strong>New look:</strong> Pulse is now faster and conversion-focused — copy the snippet and start tracking in 60s.
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="openWelcome" class="btn primary">Get Snippet</button>
+          <button id="clearBtn" class="btn ghost">Clear Data</button>
+        </div>
+      </div>
+
+      <!-- METRICS + CHART -->
+      <div class="grid">
+        <section>
+          <div class="cards" aria-hidden="false">
+            <div class="card">
+              <div class="metric">
+                <div class="left">
+                  <div class="label">Visits</div>
+                  <div id="visits" class="value">0</div>
+                </div>
+                <div class="pill" style="background:linear-gradient(90deg,var(--accent),#0891b2); color:#001318;">Live</div>
+              </div>
+              <canvas id="miniChart1" class="sparkline"></canvas>
+            </div>
+
+            <div class="card">
+              <div class="metric">
+                <div class="left">
+                  <div class="label">Unique</div>
+                  <div id="uniqueVisitors" class="value">0</div>
+                </div>
+                <div class="pill" style="background:linear-gradient(90deg,var(--accent-2),#fb7a2a);">Audience</div>
+              </div>
+              <canvas id="miniChart2" class="sparkline"></canvas>
+            </div>
+
+            <div class="card">
+              <div class="metric">
+                <div class="left">
+                  <div class="label">Pageviews</div>
+                  <div id="pageviews" class="value">0</div>
+                </div>
+                <div class="pill" style="background:linear-gradient(90deg,#7c3aed,#06b6d4);">Engagement</div>
+              </div>
+              <canvas id="miniChart3" class="sparkline"></canvas>
+            </div>
+          </div>
+
+          <div class="card chartWrap" style="margin-top:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:15px;font-weight:700;">Traffic Overview</div>
+                <div class="muted-small">Visitors & pageviews over time</div>
+              </div>
+              <div class="muted-small">Range: <span id="rangeLabel">Last 7 days</span></div>
+            </div>
+            <canvas id="trafficChart" height="220" style="margin-top:12px;"></canvas>
+          </div>
+
+          <!-- Events table -->
+          <div class="card" style="margin-top:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-weight:700;">Latest Events</div>
+              <div class="muted-small">Realtime feed</div>
+            </div>
+
+            <table class="events" aria-live="polite">
+              <thead>
+                <tr><th>URL</th><th>Referrer</th><th>User agent</th><th>Time</th></tr>
+              </thead>
+              <tbody id="analyticsTable">
+                <tr><td colspan="4" class="muted">No data loaded — try demo_site</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- RIGHTCOLUMN -->
+        <aside>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="font-weight:700;">Top Pages</div>
+              <div class="muted-small">Live</div>
+            </div>
+            <div id="topPages" class="list">
+              <!-- rows inserted by JS -->
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="font-weight:700;">Top Referrers</div>
+              <div class="muted-small">Quality</div>
+            </div>
+            <div id="topReferrers" class="list"></div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="font-weight:700;">Browsers</div>
+              <div class="muted-small">Devices</div>
+            </div>
+            <div id="topBrowsers" class="list"></div>
+          </div>
+
+        </aside>
+      </div>
+
+      <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
+        <div class="muted-small">Tip: Use <code style="background:rgba(255,255,255,0.03); padding:4px 8px; border-radius:6px;">?site=your_site</code> on the URL to auto-load.</div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- MODALS -->
+  <div id="welcomeModal" class="modal">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <h2 style="margin:0 0 4px 0;">Install Pulse</h2>
+          <div class="muted-small">Copy the snippet & paste into your site's <code>&lt;head&gt;</code></div>
+        </div>
+        <button id="closeWelcome" class="btn ghost">Close</button>
+      </div>
+
+      <div style="margin-top:12px;">
+        <pre id="scriptCode" style="background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; overflow:auto;color:var(--muted);">
+&lt;script id="tracker" src="https://analytiq-omega.vercel.app/tracker.js" data-site="YOUR_SITE_ID"&gt;&lt;/script&gt;
+        </pre>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button id="copyBtn" class="btn primary">Copy snippet</button>
+          <button id="demoBtn" class="btn ghost">Use demo_site</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="eventsModal" class="modal">
+    <div class="box" style="max-width:1200px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="margin:0">Detailed Events</h3>
+        <button id="closeEvents" class="btn ghost">Close</button>
+      </div>
+
+      <div style="margin-top:12px;">
+        <table class="events" id="eventsFull">
+          <thead><tr><th>URL</th><th>Referrer</th><th>User agent</th><th>Timestamp</th></tr></thead>
+          <tbody id="eventsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== App state ======
+    let db = null;
+    let currentRef = null;
+    let cachedData = null;
+    let chart = null;
+    let miniCharts = [];
+
+    // Demo fallback dataset (keeps the UI alive)
+    function demoData() {
+      const now = Date.now();
+      const urls = ["/", "/pricing", "/blog/launch", "/docs/install"];
+      const referrers = ["direct", "google.com", "twitter.com", "newsletter"];
+      const agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) Safari/604.1",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Firefox/115"
+      ];
+      const out = {};
+      for(let i=0;i<140;i++){
+        const t = now - (Math.random()*30*24*3600*1000);
+        out["d"+i] = { url: urls[Math.floor(Math.random()*urls.length)],
+                       referrer: referrers[Math.floor(Math.random()*referrers.length)],
+                       userAgent: agents[Math.floor(Math.random()*agents.length)],
+                       timestamp: Math.floor(t)
+                     };
+      }
+      return out;
+    }
+
+    // Firebase init (loads /firebase-config.json)
+    function initFirebase(){
+      fetch('/firebase-config.json').then(r => {
+        if(!r.ok) { console.warn("No firebase-config.json; using demo mode"); return; }
+        return r.json();
+      }).then(cfg=>{
+        if(!cfg) return;
+        if(!firebase.apps.length) firebase.initializeApp(cfg);
+        db = firebase.database();
+      }).catch(e=>{
+        console.warn("Firebase init error:", e);
+      });
     }
     initFirebase();
 
-    const siteIdInput=document.getElementById("siteIdInput");
-    const errorDiv=document.getElementById("errorMsg");
-    const tableBody=document.getElementById("analyticsTable");
-    const visitsEl=document.getElementById("visits");
-    const uniqueVisitorsEl=document.getElementById("uniqueVisitors");
-    const pageviewsEl=document.getElementById("pageviews");
-    const topPagesEl=document.getElementById("topPages");
-    const topReferrersEl=document.getElementById("topReferrers");
-    const topBrowsersEl=document.getElementById("topBrowsers");
-    const topDevicesEl=document.getElementById("topDevices");
-    const activeVisitorsEl=document.getElementById("activeVisitors");
-    const openModalBtn=document.getElementById("openModalBtn");
-    const eventsModal=document.getElementById("eventsModal");
-    const closeModal=document.getElementById("closeModal");
-    const welcomeModal=document.getElementById("welcomeModal");
-    const closeWelcome=document.getElementById("closeWelcome");
-    const copyBtn=document.getElementById("copyBtn");
-    const scriptCode=document.getElementById("scriptCode");
+    // DOM elements
+    const siteIdInput = document.getElementById('siteIdInput');
+    const loadBtn = document.getElementById('loadBtn');
+    const timeRange = document.getElementById('timeRange');
+    const visitsEl = document.getElementById('visits');
+    const uniqueVisitorsEl = document.getElementById('uniqueVisitors');
+    const pageviewsEl = document.getElementById('pageviews');
+    const activeVisitorsEl = document.getElementById('activeVisitors');
+    const topPagesEl = document.getElementById('topPages');
+    const topReferrersEl = document.getElementById('topReferrers');
+    const topBrowsersEl = document.getElementById('topBrowsers');
+    const analyticsTable = document.getElementById('analyticsTable');
+    const openModalBtn = document.getElementById('openModalBtn');
+    const eventsModal = document.getElementById('eventsModal');
+    const eventsBody = document.getElementById('eventsBody');
+    const welcomeModal = document.getElementById('welcomeModal');
+    const openWelcome = document.getElementById('openWelcome');
+    const closeWelcome = document.getElementById('closeWelcome');
+    const copyBtn = document.getElementById('copyBtn');
+    const demoBtn = document.getElementById('demoBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const openWelcomeBtn = document.getElementById('openWelcome');
 
-    function showError(msg){ errorDiv.textContent=msg; console.error(msg); }
-    function clearTable(){ tableBody.innerHTML=""; }
-    function renderList(container,data){
-      container.innerHTML=""; Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([k,v])=>{
-        const li=document.createElement("li"); li.innerHTML=`<span>${k}</span><span>${v}</span>`; container.appendChild(li);
+    // Chart helpers
+    function createLineChart(ctx, labels, data, opts = {}) {
+      return new Chart(ctx, {
+        type:'line',
+        data:{ labels, datasets:[
+          { data, fill:true, tension:0.3, borderWidth:2,
+            borderColor: opts.color || '#06b6d4',
+            backgroundColor: opts.bg || 'rgba(6,182,212,0.08)',
+            pointRadius:0
+          }
+        ]},
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{display:false} },
+          scales:{ x:{ display:false }, y:{ display:false } },
+          elements:{ line:{cap:'round'} }
+        }
       });
     }
+
+    // Render helpers
+    function renderList(container, dataObj, max=6){
+      container.innerHTML='';
+      const entries = Object.entries(dataObj).sort((a,b)=>b[1]-a[1]).slice(0,max);
+      if(entries.length===0){
+        container.innerHTML = '<div class="muted-small">No items</div>';
+        return;
+      }
+      for(const [k,v] of entries){
+        const row = document.createElement('div');
+        row.className='row';
+        row.innerHTML = `<div style="display:flex;flex-direction:column"><div style="font-weight:700">${k}</div><div class="muted-small">${v} events</div></div><div class="pill">${v}</div>`;
+        container.appendChild(row);
+      }
+    }
+
     function renderTable(data){
-      clearTable(); Object.entries(data).forEach(([key,e])=>{
-        const row=document.createElement("tr");
-        row.innerHTML=`<td>${e.url||"-"}</td><td>${e.referrer||"-"}</td><td>${e.userAgent||"-"}</td><td>${new Date(e.timestamp).toLocaleString()}</td>`;
-        tableBody.appendChild(row);
+      analyticsTable.innerHTML='';
+      const rows = Object.entries(data).sort((a,b)=>b[1].timestamp - a[1].timestamp).slice(0,12);
+      if(rows.length===0){
+        analyticsTable.innerHTML = '<tr><td colspan="4" class="muted">No events for this site</td></tr>';
+        return;
+      }
+      rows.forEach(([k,e])=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;">${e.url||'-'}</td>
+                        <td class="muted-small">${e.referrer||'direct'}</td>
+                        <td class="muted-small" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;">${e.userAgent||'-'}</td>
+                        <td class="muted-small">${new Date(e.timestamp).toLocaleString()}</td>`;
+        analyticsTable.appendChild(tr);
       });
     }
 
-    function loadAnalytics(siteId, days=7){
-      if(!siteId){ showError("Please enter a Site ID"); return;}
-      errorDiv.textContent=""; if(currentRef) currentRef.off();
-      currentRef=db.ref("analytics/"+siteId);
-      currentRef.on("value",snap=>{
-        const data=snap.val(); if(!data){ showError("No data for this site"); return;}
-        cachedData=data;
-        const cutoff = Date.now() - days*24*60*60*1000;
-        const filteredData=Object.fromEntries(Object.entries(data).filter(([_,e])=>e.timestamp>cutoff));
-        let visits=0,unique=new Set(),pageviews=0,daily={},pages={},refs={},browsers={},devices={};
-        Object.values(filteredData).forEach(e=>{
-          visits++; pageviews++; unique.add(e.userAgent||"unknown");
-          const d=new Date(e.timestamp).toLocaleDateString();
-          daily[d]=(daily[d]||0)+1;
-          pages[e.url||"unknown"]=(pages[e.url||"unknown"]||0)+1;
-          refs[e.referrer||"direct"]=(refs[e.referrer||"direct"]||0)+1;
-          const agent=e.userAgent||"unknown"; 
-          let b="Other";
-          if(agent.includes("Chrome")) b="Chrome";
-          else if(agent.includes("Firefox")) b="Firefox";
-          else if(agent.includes("Safari")&&!agent.includes("Chrome")) b="Safari";
-          else if(agent.includes("Edge")) b="Edge";
-          browsers[b]=(browsers[b]||0)+1;
-
-          let deviceType="Desktop";
-          if(/Mobile|Android|iPhone/i.test(agent)) deviceType="Mobile";
-          else if(/Tablet|iPad/i.test(agent)) deviceType="Tablet";
-          devices[deviceType]=(devices[deviceType]||0)+1;
-        });
-        visitsEl.textContent=visits; uniqueVisitorsEl.textContent=unique.size; pageviewsEl.textContent=pageviews;
-        renderList(topPagesEl,pages); renderList(topReferrersEl,refs); renderList(topBrowsersEl,browsers); renderList(topDevicesEl,devices);
-
-        const labels=Object.keys(daily),values=Object.values(daily);
-        if(chart) chart.destroy(); const ctx=document.getElementById("trafficChart").getContext("2d");
-        chart=new Chart(ctx,{type:"line",data:{labels,datasets:[{label:"Visits",data:values,borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,0.2)",fill:true,tension:0.3}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
-
-        // Active Visitors
-        setInterval(() => {
-          const now = Date.now();
-          const active = Object.values(filteredData).filter(e => now - e.timestamp < 300000);
-          activeVisitorsEl.textContent = active.length;
-        }, 5000);
-      },err=>showError("Firebase error: "+err.message));
+    function renderEventsFull(data){
+      eventsBody.innerHTML='';
+      Object.entries(data).sort((a,b)=>b[1].timestamp - a[1].timestamp).slice(0,300).forEach(([k,e])=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${e.url||'-'}</td><td class="muted-small">${e.referrer||'direct'}</td><td class="muted-small">${e.userAgent||'-'}</td><td class="muted-small">${new Date(e.timestamp).toLocaleString()}</td>`;
+        eventsBody.appendChild(tr);
+      });
     }
 
-    document.getElementById("loadBtn").onclick=()=>loadAnalytics(siteIdInput.value.trim(), parseInt(document.getElementById("timeRange").value));
-    openModalBtn.onclick=()=>{ if(cachedData){renderTable(cachedData); eventsModal.style.display="block";} else showError("Load analytics first!");};
-    closeModal.onclick=()=>eventsModal.style.display="none";
-    window.onclick=e=>{ if(e.target===eventsModal) eventsModal.style.display="none"; if(e.target===welcomeModal) welcomeModal.style.display="none";};
+    // analytics logic
+    function computeAndRender(data, days=7){
+      // filter by time
+      const cutoff = Date.now() - days*24*3600*1000;
+      const filtered = Object.fromEntries(Object.entries(data).filter(([k,e])=>e.timestamp > cutoff));
+      cachedData = filtered;
 
-    function clearAnalytics(){ if(currentRef) currentRef.remove(); }
+      // aggregations
+      let visits = 0, pageviews = 0;
+      const unique = new Set();
+      const daily = {}, pages = {}, refs = {}, browsers = {}, devices = {};
 
-    function openWelcome(){ welcomeModal.style.display="block"; }
-    closeWelcome.onclick=()=>welcomeModal.style.display="none";
-    copyBtn.onclick=()=>{ navigator.clipboard.writeText(scriptCode.textContent).then(()=>{copyBtn.textContent="✅ Copied!"; setTimeout(()=>copyBtn.textContent="📋 Copy",1500);});};
+      Object.values(filtered).forEach(e=>{
+        visits++; pageviews++;
+        unique.add(e.userAgent||('ua_'+Math.random()));
+        const d = new Date(e.timestamp).toLocaleDateString();
+        daily[d] = (daily[d]||0)+1;
+        pages[e.url||'unknown'] = (pages[e.url||'unknown']||0)+1;
+        refs[e.referrer||'direct'] = (refs[e.referrer||'direct']||0)+1;
+        const ua=e.userAgent||'unknown';
+        let b='Other';
+        if(ua.includes('Chrome')) b='Chrome';
+        else if(ua.includes('Firefox')) b='Firefox';
+        else if(ua.includes('Safari') && !ua.includes('Chrome')) b='Safari';
+        else if(ua.includes('Edge')) b='Edge';
+        browsers[b]=(browsers[b]||0)+1;
+        let dt='Desktop';
+        if(/Mobile|Android|iPhone/i.test(ua)) dt='Mobile';
+        else if(/iPad|Tablet/i.test(ua)) dt='Tablet';
+        devices[dt]=(devices[dt]||0)+1;
+      });
+
+      // write UI
+      visitsEl.textContent = visits.toLocaleString();
+      uniqueVisitorsEl.textContent = unique.size.toLocaleString();
+      pageviewsEl.textContent = pageviews.toLocaleString();
+
+      renderList(topPagesEl, pages);
+      renderList(topReferrersEl, refs);
+      renderList(topBrowsersEl, browsers);
+
+      renderTable(filtered);
+      renderEventsFull(filtered);
+
+      // active visitors (last 5 minutes)
+      const active = Object.values(filtered).filter(e => Date.now() - e.timestamp < 300000).length;
+      activeVisitorsEl.textContent = active;
+
+      // traffic chart
+      const labels = Object.keys(daily).sort((a,b)=> new Date(a) - new Date(b));
+      const values = labels.map(l => daily[l]||0);
+      const ctx = document.getElementById('trafficChart').getContext('2d');
+      if(chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type:'line',
+        data:{ labels, datasets:[
+          { label:'Visits', data: values, borderColor:'#06b6d4', backgroundColor:'rgba(6,182,212,0.08)', fill:true, tension:0.3, pointRadius:3 }
+        ]},
+        options:{
+          responsive:true,
+          plugins:{ legend:{display:false} },
+          scales:{ x:{ ticks:{color:'rgba(255,255,255,0.6)'} }, y:{ ticks:{color:'rgba(255,255,255,0.6)'} } }
+        }
+      });
+
+      // mini sparkline charts (simple reuse)
+      const sample = values.length ? values : [0,1,2,1,0];
+      const minidata = [sample,sample.map(v=>Math.floor(v/2)),sample.map(v=>Math.floor(v*1.1))];
+      ['miniChart1','miniChart2','miniChart3'].forEach((id,i)=>{
+        const ctx2 = document.getElementById(id).getContext('2d');
+        if(miniCharts[i]) miniCharts[i].destroy();
+        miniCharts[i] = createLineChart(ctx2, Array(minidata[i].length).fill(''), minidata[i], { color: i===0 ? '#06b6d4' : (i===1? '#fb923c' : '#7c3aed') });
+      });
+    }
+
+    // Load analytics from Firebase or demo fallback
+    function loadAnalytics(siteId, days=7){
+      if(!siteId) { alert('Enter a Site ID (try demo_site)'); return; }
+      // clear old
+      if(currentRef) currentRef.off();
+      if(db && siteId && siteId !== 'demo_site') {
+        currentRef = db.ref('analytics/'+siteId);
+        currentRef.on('value', snap=>{
+          const data = snap.val();
+          if(!data) {
+            // no data for site
+            alert('No data for '+siteId+' — falling back to demo data.');
+            computeAndRender(demoData(), days);
+            return;
+          }
+          computeAndRender(data, days);
+        }, err => {
+          alert('Firebase error: '+err.message);
+          computeAndRender(demoData(), days);
+        });
+      } else {
+        // demo mode
+        computeAndRender(demoData(), days);
+      }
+    }
 
     // Export CSV
-    document.getElementById("exportBtn").onclick = () => {
-      if(!cachedData) return showError("No data loaded!");
-      const rows=[["URL","Referrer","User Agent","Timestamp"]];
-      Object.values(cachedData).forEach(e=>rows.push([e.url,e.referrer,e.userAgent,new Date(e.timestamp).toLocaleString()]));
-      const csv=rows.map(r=>r.join(",")).join("\n");
-      const blob=new Blob([csv],{type:"text/csv"});
-      const a=document.createElement("a");
-      a.href=URL.createObjectURL(blob);
-      a.download="analytics.csv";
+    function exportCSV(){
+      if(!cachedData) return alert('No data loaded to export');
+      const rows=[['URL','Referrer','User Agent','Timestamp']];
+      Object.values(cachedData).forEach(e=> rows.push([e.url||'', e.referrer||'', (e.userAgent||'').replace(/,/g,''), new Date(e.timestamp).toLocaleString()]));
+      const csv = rows.map(r => r.map(cell => `"${(cell||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type:'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'analytics_export.csv';
       a.click();
+    }
+
+    // Clear analytics (careful)
+    function clearAnalytics(siteId){
+      if(!siteId) return alert('No site loaded');
+      if(!confirm('Clear analytics for '+siteId+'? This will DELETE data in Firebase.')) return;
+      if(db){
+        db.ref('analytics/'+siteId).remove().then(()=> alert('Cleared: '+siteId)).catch(err => alert('Remove failed: '+err.message));
+      } else {
+        alert('No Firebase configured; nothing to clear.');
+      }
+    }
+
+    // events modal toggles
+    function openEventsModal(){ eventsModal.style.display='flex'; }
+    function closeEventsModal(){ eventsModal.style.display='none'; }
+
+    // welcome modal toggles
+    function openWelcomeModal(){ welcomeModal.style.display='flex'; }
+    function closeWelcomeModal(){ welcomeModal.style.display='none'; }
+
+    // small utilities
+    function parseQueryAndLoad(){
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get('site');
+      if(s){ siteIdInput.value = s; loadAnalytics(s, parseInt(timeRange.value)); }
+    }
+
+    // ====== event listeners ======
+    loadBtn.addEventListener('click', ()=> loadAnalytics(siteIdInput.value.trim() || 'demo_site', parseInt(timeRange.value)));
+    openModalBtn.addEventListener('click', ()=> openEventsModal());
+    document.getElementById('closeEvents').addEventListener('click', closeEventsModal);
+    openWelcomeBtn.addEventListener('click', openWelcomeModal);
+    document.getElementById('closeWelcome').addEventListener('click', closeWelcomeModal);
+    copyBtn.addEventListener('click', ()=>{
+      const txt = document.getElementById('scriptCode').innerText.trim();
+      navigator.clipboard.writeText(txt).then(()=> { copyBtn.textContent='Copied ✓'; setTimeout(()=> copyBtn.textContent='Copy snippet',1400); });
+    });
+    demoBtn.addEventListener('click', ()=> { siteIdInput.value='demo_site'; loadAnalytics('demo_site', parseInt(timeRange.value)); closeWelcomeModal(); });
+    exportBtn.addEventListener('click', exportCSV);
+    clearBtn.addEventListener('click', ()=> clearAnalytics(siteIdInput.value.trim() || 'demo_site'));
+
+    // close modals on outside click
+    window.addEventListener('click', (e)=>{
+      if(e.target===welcomeModal) closeWelcomeModal();
+      if(e.target===eventsModal) closeEventsModal();
+    });
+
+    // onload: confetti, init charts, parse params
+    window.onload = ()=>{
+      confetti({ particleCount:80, spread:60, origin:{y:0.6} });
+      // set defaults
+      timeRange.value = '7';
+      parseQueryAndLoad();
+      openWelcomeModal();
     };
 
-    // On load: confetti then welcome modal
-    window.onload=()=>{
-      confetti({ particleCount:100, spread:60, origin:{ y:0.6 } });
-      openWelcome();
-    };
-
-    // Persistent Site ID from URL
-    const params=new URLSearchParams(window.location.search);
-    const siteFromUrl=params.get("site"); if(siteFromUrl){ siteIdInput.value=siteFromUrl; loadAnalytics(siteFromUrl);}
   </script>
 </body>
 </html>
