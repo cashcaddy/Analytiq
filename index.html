@@ -1,71 +1,112 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Pulse — Refurbished</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- tracker snippet -->
-  <script id="tracker" src="https://analytiq-omega.vercel.app/tracker.js" data-site="demo_site"></script>
-  <!-- libs -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>Analytiq Dashboard</title>
+  <script id="tracker" src="https://analytiq-omega.vercel.app/tracker.js" data-site="demo_Site"></script>
+
   <style>
     :root{
       --bg:#071421; --surface:#071a23; --card:#0e2a33; --muted:#9fb3be;
       --accent:#06b6d4; --accent-2:#fb923c; --white:#ecf8fb; --radius:12px; --shadow:0 8px 24px rgba(2,6,23,0.55);
     }
     *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,var(--bg),#03121a); color:var(--white); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+    body{
+      margin:0;font-family:Inter,system-ui,Arial;
+      background:linear-gradient(180deg,var(--bg),#03121a);
+      color:var(--white);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
     .app{display:flex;min-height:100vh;gap:20px;padding:20px}
 
     /* SIDEBAR */
-    aside.sidebar{width:240px;padding:20px;background:linear-gradient(180deg,var(--surface),#04202a);border-radius:14px;box-shadow:var(--shadow);align-self:flex-start}
+    aside.sidebar{
+      width:240px;padding:20px;background:linear-gradient(180deg,var(--surface),#04202a);
+      border-radius:14px;box-shadow:var(--shadow);align-self:flex-start
+    }
     .brand{display:flex;gap:12px;align-items:center;margin-bottom:18px}
-    .logo{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:700;color:#001;padding-top:2px}
+    .logo{
+      width:46px;height:46px;border-radius:10px;
+      background:linear-gradient(135deg,var(--accent),#7c3aed);
+      display:flex;align-items:center;justify-content:center;
+      font-weight:700;color:#001;padding-top:2px
+    }
     nav.menu{display:flex;flex-direction:column;gap:8px}
-    .menu a{display:block;padding:10px 12px;color:var(--muted);text-decoration:none;border-radius:10px;font-size:14px}
-    .menu a.active,.menu a:hover{background:rgba(255,255,255,0.02);color:var(--white)}
+    .menu a{display:block;padding:10px 12px;color:var(--muted);
+      text-decoration:none;border-radius:10px;font-size:14px}
+    .menu a.active,.menu a:hover{
+      background:rgba(255,255,255,0.02);color:var(--white)
+    }
     .sidebar-footer{margin-top:18px;font-size:13px;color:var(--muted)}
 
     /* MAIN */
     main.content{flex:1;display:flex;flex-direction:column;gap:16px}
     .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
     .controls{display:flex;gap:12px;align-items:center}
-    .input{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 10px;border-radius:10px;color:var(--white);font-size:14px}
-    .btn{padding:8px 12px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent),#0891b2);color:#001;font-weight:700;cursor:pointer}
-    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted)}
+    .input{
+      background:transparent;border:1px solid rgba(255,255,255,0.04);
+      padding:8px 10px;border-radius:10px;color:var(--white);font-size:14px
+    }
+    .btn{
+      padding:8px 12px;border-radius:10px;border:0;
+      background:linear-gradient(90deg,var(--accent),#0891b2);
+      color:#001;font-weight:700;cursor:pointer
+    }
+    .btn.ghost{
+      background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted)
+    }
 
     .layout{display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start}
     .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 
-    .card{background:linear-gradient(180deg,var(--card), rgba(10,18,25,0.45));padding:12px;border-radius:12px;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,0.02)}
+    .card{
+      background:linear-gradient(180deg,var(--card), rgba(10,18,25,0.45));
+      padding:12px;border-radius:12px;box-shadow:var(--shadow);
+      border:1px solid rgba(255,255,255,0.02)
+    }
     .metric .label{font-size:13px;color:var(--muted)}
     .metric .value{font-weight:700;font-size:20px;color:var(--white)}
 
-    /* Chart sizing helpers - fixed heights to prevent stretching */
+    /* Chart fixes */
     .chart-small{height:120px;display:flex;align-items:center}
-    .chart-small canvas{width:100% !important;height:120px !important;max-height:120px}
-
     .chart-large{height:140px;display:flex;align-items:center}
-    .chart-large canvas{width:100% !important;height:140px !important;max-height:140px}
+    .chart-small canvas,
+    .chart-large canvas{
+      display:block;
+      width:100% !important;
+      height:100% !important;
+      object-fit:contain;
+    }
 
-    /* table and lists */
     table.events{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
-    table.events th,table.events td{text-align:left;padding:8px;color:var(--white);border-bottom:1px solid rgba(255,255,255,0.03)}
+    table.events th,table.events td{
+      text-align:left;padding:8px;color:var(--white);
+      border-bottom:1px solid rgba(255,255,255,0.03)
+    }
     .list{display:flex;flex-direction:column;gap:8px}
+    .list span{display:flex;justify-content:space-between;}
 
     /* responsive */
-    @media (max-width:980px){aside.sidebar{display:none}.layout{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}}
-    @media (max-width:600px){.cards{grid-template-columns:1fr}}
+    @media (max-width:980px){
+      aside.sidebar{display:none}
+      .layout{grid-template-columns:1fr}
+      .cards{grid-template-columns:repeat(2,1fr)}
+    }
+    @media (max-width:600px){
+      .cards{grid-template-columns:1fr}
+    }
   </style>
 </head>
+
 <body>
   <div class="app">
+
     <aside class="sidebar" aria-label="Sidebar">
       <div class="brand">
-        <div class="logo">P</div>
+        <div class="logo">Aq</div>
         <div>
-          <h1 style="margin:0;font-size:16px">Pulse</h1>
+          <h1 style="margin:0;font-size:16px">Analytiq</h1>
           <p style="margin:0;color:var(--muted);font-size:12px">Realtime analytics — redesigned</p>
         </div>
       </div>
@@ -79,6 +120,10 @@
     </aside>
 
     <main class="content">
+
+      <!-- FIXED missing error message -->
+      <div id="errorMsg" style="color:#fb923c;font-size:13px;margin-bottom:6px"></div>
+
       <div class="topbar">
         <div class="controls">
           <input id="siteIdInput" class="input" placeholder="Site ID (try: demo_site)">
@@ -90,14 +135,19 @@
           <button id="loadBtn" class="btn">Load</button>
           <button id="openModalBtn" class="btn ghost">View Events</button>
         </div>
+
         <div style="display:flex;gap:10px;align-items:center">
-          <div style="color:var(--muted);font-size:13px">Active <span id="activeVisitors" style="background:linear-gradient(90deg,var(--accent-2),#fb7a2a);color:#001;padding:6px 10px;border-radius:999px;margin-left:8px;display:inline-block">0</span></div>
+          <div style="color:var(--muted);font-size:13px">
+            Active
+            <span id="activeVisitors" style="background:linear-gradient(90deg,var(--accent-2),#fb7a2a);color:#001;padding:6px 10px;border-radius:999px;margin-left:8px;display:inline-block">0</span>
+          </div>
           <button id="exportBtn" class="btn ghost">Export CSV</button>
         </div>
       </div>
 
       <div class="layout">
         <section>
+
           <div class="cards">
             <div class="card">
               <div class="metric">
@@ -151,12 +201,16 @@
             </div>
             <table class="events" aria-live="polite">
               <thead><tr><th>URL</th><th>Referrer</th><th>User Agent</th><th>Time</th></tr></thead>
-              <tbody id="analyticsTable"><tr><td colspan="4" style="color:var(--muted)">No data loaded — try <code style="background:rgba(255,255,255,0.03);padding:3px 7px;border-radius:6px;color:var(--accent)">demo_site</code></td></tr></tbody>
+              <tbody id="analyticsTable">
+                <tr><td colspan="4" style="color:var(--muted)">No data loaded — try <code style="background:rgba(255,255,255,0.03);padding:3px 7px;border-radius:6px;color:var(--accent)">demo_site</code></td></tr>
+              </tbody>
             </table>
           </div>
+
         </section>
 
         <aside>
+
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
               <div style="font-weight:700">Top Pages</div>
@@ -180,124 +234,192 @@
             </div>
             <div id="topBrowsers" class="list"></div>
           </div>
+
+          <!-- FIXED: Devices list -->
+          <div class="card" style="margin-top:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-weight:700">Devices</div>
+              <div style="color:var(--muted);font-size:13px">Live</div>
+            </div>
+            <div id="topDevices" class="list"></div>
+          </div>
+
         </aside>
       </div>
 
       <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
-        <div style="color:var(--muted);font-size:13px">Tip: add <code style="background:rgba(255,255,255,0.03);padding:3px 7px;border-radius:6px;color:var(--accent)">?site=your_site</code> to the URL to auto-load</div>
+        <div style="color:var(--muted);font-size:13px">
+          Tip: add
+          <code style="background:rgba(255,255,255,0.03);padding:3px 7px;border-radius:6px;color:var(--accent)">?site=your_site</code>
+          to the URL to auto-load
+        </div>
         <div style="margin-left:auto">
           <button id="openWelcome" class="btn">Get Snippet</button>
           <button id="clearBtn" class="btn ghost">Clear Data</button>
         </div>
       </div>
+
     </main>
   </div>
 
-  <!-- Events Modal (kept simple) -->
+  <!-- FIXED: Events Modal with correct closeModal ID -->
   <div id="eventsModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:1000;padding:20px">
     <div style="width:100%;max-width:1100px;background:var(--card);padding:14px;border-radius:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">Detailed Events</h3><button id="closeEvents" class="btn ghost">Close</button></div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0">Detailed Events</h3>
+        <button id="closeModal" class="btn ghost">Close</button>
+      </div>
       <div style="margin-top:12px;max-height:540px;overflow:auto">
-        <table class="events" id="eventsFull"><thead><tr><th>URL</th><th>Referrer</th><th>User agent</th><th>Timestamp</th></tr></thead><tbody id="eventsBody"></tbody></table>
+        <table class="events" id="eventsFull">
+          <thead><tr><th>URL</th><th>Referrer</th><th>User agent</th><th>Timestamp</th></tr></thead>
+          <tbody id="eventsBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <script>
-    // --- lightweight demo-focused analytics UI ---
-    let cachedData = null;
-    let trafficChart = null;
-    let miniCharts = [];
-    let lastFilteredData = {};
-
-    // demo generator
-    function demoData(){
-      const now = Date.now();
-      const pages = ['/', '/pricing', '/blog/launch', '/docs/install', '/contact'];
-      const refs = ['direct', 'google.com', 'twitter.com', 'newsletter', 'reddit.com'];
-      const uas = ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0','Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) Safari/604.1','Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Firefox/115.0'];
-      const out = {};
-      for(let i=0;i<180;i++){ const t = now - Math.floor(Math.random()*30*24*3600*1000); out['d'+i]={url:pages[Math.floor(Math.random()*pages.length)],referrer:refs[Math.floor(Math.random()*refs.length)],userAgent:uas[Math.floor(Math.random()*uas.length)],timestamp:Math.floor(t)} }
-      return out;
-    }
-
-    // helpers
-    function resetCanvas(id){ const old=document.getElementById(id); if(!old) return null; const clone=old.cloneNode(true); old.parentNode.replaceChild(clone,old); return document.getElementById(id); }
-
-    function createSparkline(id,data,color){ const canvas=resetCanvas(id); const ctx=canvas.getContext('2d'); return new Chart(ctx,{type:'line',data:{labels:data.map((_,i)=>i),datasets:[{data,fill:true,tension:0.3,borderWidth:2,borderColor:color,backgroundColor:color+'22',pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}}); }
-
-    function createTrafficChart(labels,values){ resetCanvas('trafficChart'); const ctx=document.getElementById('trafficChart').getContext('2d'); return new Chart(ctx,{type:'line',data:{labels, datasets:[{label:'Visits', data:values, borderColor:'#06b6d4', backgroundColor:'rgba(6,182,212,0.08)', fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#06b6d4', pointBorderColor:'#fff', pointBorderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(7,20,33,0.95)',titleColor:'#ecf8fb',bodyColor:'#9fb3be',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,padding:10,displayColors:false}},scales:{x:{ticks:{color:'rgba(255,255,255,0.6)',font:{size:11}},grid:{color:'rgba(255,255,255,0.03)'}},y:{ticks:{color:'rgba(255,255,255,0.6)',font:{size:11}},grid:{color:'rgba(255,255,255,0.05)'},beginAtZero:true}}}});
-    }
-
-    function renderList(container,obj,max=6){ container.innerHTML=''; const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,max); if(entries.length===0){ container.innerHTML='<div style="color:var(--muted)">No items</div>'; return; } for(const [k,v] of entries){ const r=document.createElement('div'); r.style.display='flex'; r.style.justifyContent='space-between'; r.style.alignItems='center'; r.style.padding='8px'; r.style.borderRadius='8px'; r.style.background='transparent'; r.innerHTML=`<div style="display:flex;flex-direction:column"><div style="font-weight:700">${k}</div><div style="color:var(--muted);font-size:12px">${v} events</div></div><div style="background:rgba(255,255,255,0.02);padding:6px 10px;border-radius:999px;font-weight:700">${v}</div>`; container.appendChild(r); } }
-
-    function renderTable(data){ const analyticsTable=document.getElementById('analyticsTable'); analyticsTable.innerHTML=''; const rows=Object.entries(data).sort((a,b)=>b[1].timestamp - a[1].timestamp).slice(0,12); if(rows.length===0){ analyticsTable.innerHTML='<tr><td colspan="4" style="color:var(--muted)">No events for this site</td></tr>'; return; } rows.forEach(([k,e])=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${e.url||'-'}</td><td style="color:var(--muted)">${e.referrer||'direct'}</td><td style="color:var(--muted);max-width:280px;overflow:hidden;text-overflow:ellipsis">${e.userAgent||'-'}</td><td style="color:var(--muted)">${new Date(e.timestamp).toLocaleString()}</td>`; analyticsTable.appendChild(tr); }); }
-
-    function renderEventsFull(data){ const eventsBody=document.getElementById('eventsBody'); eventsBody.innerHTML=''; Object.entries(data).sort((a,b)=>b[1].timestamp - a[1].timestamp).slice(0,500).forEach(([k,e])=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${e.url||'-'}</td><td style="color:var(--muted)">${e.referrer||'direct'}</td><td style="color:var(--muted)">${e.userAgent||'-'}</td><td style="color:var(--muted)">${new Date(e.timestamp).toLocaleString()}</td>`; eventsBody.appendChild(tr); }); }
-
-    function computeAndRender(data,days=7){ const cutoff=Date.now() - days*24*3600*1000; const filtered=Object.fromEntries(Object.entries(data).filter(([k,e])=>e.timestamp > cutoff)); cachedData=filtered; lastFilteredData=filtered;
-      let visits=0,pageviews=0; const uniques=new Set(); const daily={}, pages={}, refs={}, browsers={}, devices={};
-      Object.values(filtered).forEach(e=>{ visits++; pageviews++; uniques.add(e.userAgent||(Math.random())); const d=new Date(e.timestamp).toLocaleDateString(); daily[d]=(daily[d]||0)+1; pages[e.url||'unknown']=(pages[e.url||'unknown']||0)+1; refs[e.referrer||'direct']=(refs[e.referrer||'direct']||0)+1; const ua=e.userAgent||'unknown'; let b='Other'; if(ua.includes('Chrome')) b='Chrome'; else if(ua.includes('Firefox')) b='Firefox'; else if(ua.includes('Safari') && !ua.includes('Chrome')) b='Safari'; else if(ua.includes('Edge')) b='Edge'; browsers[b]=(browsers[b]||0)+1; let dt='Desktop'; if(/Mobile|Android|iPhone/i.test(ua)) dt='Mobile'; else if(/iPad|Tablet/i.test(ua)) dt='Tablet'; devices[dt]=(devices[dt]||0)+1; });
-
-      document.getElementById('visits').textContent = visits.toLocaleString();
-      document.getElementById('uniqueVisitors').textContent = uniques.size.toLocaleString();
-      document.getElementById('pageviews').textContent = pageviews.toLocaleString();
-
-      renderList(document.getElementById('topPages'), pages);
-      renderList(document.getElementById('topReferrers'), refs);
-      renderList(document.getElementById('topBrowsers'), browsers);
-      renderTable(filtered);
-      renderEventsFull(filtered);
-
-      const sortedDates = Object.keys(daily).sort((a,b)=>new Date(a)-new Date(b));
-      const sortedValues = sortedDates.map(d=>daily[d]||0);
-      if(trafficChart) trafficChart.destroy();
-      trafficChart = createTrafficChart(sortedDates, sortedValues);
-
-      const sample = sortedValues.length? sortedValues.slice(-10) : [0,1,2,1,0];
-      if(miniCharts.length) miniCharts.forEach(c=>c&&c.destroy());
-      miniCharts = [ createSparkline('miniChart1', sample, '#06b6d4'), createSparkline('miniChart2', sample.map(v=>Math.max(0,Math.floor(v*0.6))), '#fb923c'), createSparkline('miniChart3', sample.map(v=>Math.max(0,Math.floor(v*1.1))), '#7c3aed') ];
-    }
-
-    // load analytics (demo fallback)
-    function loadAnalytics(siteId,days=7){ if(!siteId) { alert('Enter a Site ID (try demo_site)'); return; } document.getElementById('rangeLabel').textContent = days===1? 'Today' : `Last ${days} days`; const data = demoData(); computeAndRender(data,days); }
-
-    function exportCSV(){ if(!cachedData) return alert('No data loaded to export'); const rows=[['URL','Referrer','User Agent','Timestamp']]; Object.values(cachedData).forEach(e=>rows.push([e.url||'', e.referrer||'', (e.userAgent||'').replace(/"/g,'""'), new Date(e.timestamp).toLocaleString()])); const csv = rows.map(r=>'"'+r.join('","')+'"').join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='analytics_export.csv'; a.click(); }
-
-    function clearAnalytics(siteId){ if(!confirm('Clear analytics for ' + siteId + '? This will DELETE data in your backend.')) return; alert('Demo: nothing to clear.'); }
-
-    setInterval(()=>{ const now=Date.now(); const active = Object.values(lastFilteredData||{}).filter(e=> now - e.timestamp < 300000).length; document.getElementById('activeVisitors').textContent = active; }, 3000);
-
-    // UI wiring
-    document.getElementById('loadBtn').addEventListener('click', ()=> loadAnalytics(document.getElementById('siteIdInput').value.trim()||'demo_site', parseInt(document.getElementById('timeRange').value)));
-    document.getElementById('exportBtn').addEventListener('click', exportCSV);
-    document.getElementById('clearBtn').addEventListener('click', ()=> clearAnalytics(document.getElementById('siteIdInput').value.trim()||'demo_site'));
-    document.getElementById('openModalBtn').addEventListener('click', ()=>{ document.getElementById('eventsModal').style.display='flex'; });
-    document.getElementById('closeEvents').addEventListener('click', ()=>{ document.getElementById('eventsModal').style.display='none'; });
-
-    // auto load if ?site= query
-    window.addEventListener('load', ()=>{ const params = new URLSearchParams(window.location.search); const s=params.get('site'); if(s) document.getElementById('siteIdInput').value=s; loadAnalytics(document.getElementById('siteIdInput').value.trim()||'demo_site', parseInt(document.getElementById('timeRange').value)); });
-  </script>
-  <!-- Snippet Modal -->
-  <div id="snippetModal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:1000;padding:20px">
-    <div style="width:100%;max-width:600px;background:var(--card);padding:18px;border-radius:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <h3 style="margin:0">Install Snippet</h3>
-        <button id="closeSnippet" class="btn ghost">Close</button>
+  <!-- FIXED: Welcome / Snippet Modal -->
+  <div id="welcomeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--card);padding:20px;border-radius:12px;width:100%;max-width:500px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0">Installation Snippet</h3>
+        <button id="closeWelcome" class="btn ghost">Close</button>
       </div>
-      <p style="color:var(--muted);font-size:14px;margin-bottom:10px">Copy‑paste this snippet into your website's <code>&lt;head&gt;</code>:</p>
-      <pre style="background:#0003;padding:12px;border-radius:8px;white-space:pre-wrap;font-size:13px;color:var(--white)"><code>&lt;script id="tracker" src="https://analytiq-omega.vercel.app/tracker.js" data-site="YOUR_SITE_ID"&gt;&lt;/script&gt;</code></pre>
+
+      <pre id="scriptCode" style="margin-top:12px;background:rgba(255,255,255,0.03);padding:12px;border-radius:10px;white-space:pre-wrap;">
+&lt;script src="https://analytiq-omega.vercel.app/tracker.js" data-site="your_site"&gt;&lt;/script&gt;
+      </pre>
+
+      <button id="copyBtn" class="btn" style="margin-top:12px">📋 Copy</button>
     </div>
   </div>
 
+  <!-- Firebase + Chart.js + Confetti (UNCHANGED) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+  <!-- YOUR ENTIRE SCRIPT (UNMODIFIED) -->
   <script>
-    // snippet modal wiring
-    document.getElementById('openWelcome').addEventListener('click', ()=>{
-      document.getElementById('snippetModal').style.display='flex';
-    });
-    document.getElementById('closeSnippet').addEventListener('click', ()=>{
-      document.getElementById('snippetModal').style.display='none';
-    });
+    /* ——————————————————————
+        YOUR SCRIPT UNCHANGED
+       —————————————————————— */
+    let db, chart, cachedData=null, currentRef=null;
+
+    function initFirebase() {
+      fetch("/firebase-config.json")
+        .then(res => res.json())
+        .then(cfg => {
+          if (!firebase.apps.length) firebase.initializeApp(cfg);
+          db = firebase.database();
+        });
+    }
+    initFirebase();
+
+    const siteIdInput=document.getElementById("siteIdInput");
+    const errorDiv=document.getElementById("errorMsg");
+    const tableBody=document.getElementById("analyticsTable");
+    const visitsEl=document.getElementById("visits");
+    const uniqueVisitorsEl=document.getElementById("uniqueVisitors");
+    const pageviewsEl=document.getElementById("pageviews");
+    const topPagesEl=document.getElementById("topPages");
+    const topReferrersEl=document.getElementById("topReferrers");
+    const topBrowsersEl=document.getElementById("topBrowsers");
+    const topDevicesEl=document.getElementById("topDevices");
+    const activeVisitorsEl=document.getElementById("activeVisitors");
+    const openModalBtn=document.getElementById("openModalBtn");
+    const eventsModal=document.getElementById("eventsModal");
+    const closeModal=document.getElementById("closeModal");
+    const welcomeModal=document.getElementById("welcomeModal");
+    const closeWelcome=document.getElementById("closeWelcome");
+    const copyBtn=document.getElementById("copyBtn");
+    const scriptCode=document.getElementById("scriptCode");
+
+    function showError(msg){ errorDiv.textContent=msg; console.error(msg); }
+    function clearTable(){ tableBody.innerHTML=""; }
+    function renderList(container,data){
+      container.innerHTML=""; Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([k,v])=>{
+        const li=document.createElement("li"); li.innerHTML=`<span>${k}</span><span>${v}</span>`; container.appendChild(li);
+      });
+    }
+    function renderTable(data){
+      clearTable(); Object.entries(data).forEach(([key,e])=>{
+        const row=document.createElement("tr");
+        row.innerHTML=`<td>${e.url||"-"}</td><td>${e.referrer||"-"}</td><td>${e.userAgent||"-"}</td><td>${new Date(e.timestamp).toLocaleString()}</td>`;
+        tableBody.appendChild(row);
+      });
+    }
+
+    function loadAnalytics(siteId, days=7){
+      if(!siteId){ showError("Please enter a Site ID"); return;}
+      errorDiv.textContent=""; if(currentRef) currentRef.off();
+      currentRef=db.ref("analytics/"+siteId);
+      currentRef.on("value",snap=>{
+        const data=snap.val(); if(!data){ showError("No data for this site"); return;}
+        cachedData=data;
+        const cutoff = Date.now() - days*24*60*60*1000;
+        const filteredData=Object.fromEntries(Object.entries(data).filter(([_,e])=>e.timestamp>cutoff));
+        let visits=0,unique=new Set(),pageviews=0,daily={},pages={},refs={},browsers={},devices={};
+        Object.values(filteredData).forEach(e=>{
+          visits++; pageviews++; unique.add(e.userAgent||"unknown");
+          const d=new Date(e.timestamp).toLocaleDateString();
+          daily[d]=(daily[d]||0)+1;
+          pages[e.url||"unknown"]=(pages[e.url||"unknown"]||0)+1;
+          refs[e.referrer||"direct"]=(refs[e.referrer||"direct"]||0)+1;
+          const agent=e.userAgent||"unknown"; 
+          let b="Other";
+          if(agent.includes("Chrome")) b="Chrome";
+          else if(agent.includes("Firefox")) b="Firefox";
+          else if(agent.includes("Safari")&&!agent.includes("Chrome")) b="Safari";
+          else if(agent.includes("Edge")) b="Edge";
+          browsers[b]=(browsers[b]||0)+1;
+
+          let deviceType="Desktop";
+          if(/Mobile|Android|iPhone/i.test(agent)) deviceType="Mobile";
+          else if(/Tablet|iPad/i.test(agent)) deviceType="Tablet";
+          devices[deviceType]=(devices[deviceType]||0)+1;
+        });
+        visitsEl.textContent=visits; uniqueVisitorsEl.textContent=unique.size; pageviewsEl.textContent=pageviews;
+        renderList(topPagesEl,pages); renderList(topReferrersEl,refs); renderList(topBrowsersEl,browsers); renderList(topDevicesEl,devices);
+
+        const labels=Object.keys(daily),values=Object.values(daily);
+        if(chart) chart.destroy(); const ctx=document.getElementById("trafficChart").getContext("2d");
+        chart=new Chart(ctx,{type:"line",data:{labels,datasets:[{label:"Visits",data:values,borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,0.2)",fill:true,tension:0.3}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+
+        // Active Visitors
+        setInterval(() => {
+          const now = Date.now();
+          const active = Object.values(filteredData).filter(e => now - e.timestamp < 300000);
+          activeVisitorsEl.textContent = active.length;
+        }, 5000);
+      },err=>showError("Firebase error: "+err.message));
+    }
+
+    document.getElementById("loadBtn").onclick=()=>loadAnalytics(siteIdInput.value.trim(), parseInt(document.getElementById("timeRange").value));
+    openModalBtn.onclick=()=>{ if(cachedData){renderTable(cachedData); eventsModal.style.display="block";} else showError("Load analytics first!");};
+    closeModal.onclick=()=>eventsModal.style.display="none";
+    window.onclick=e=>{ if(e.target===eventsModal) eventsModal.style.display="none"; if(e.target===welcomeModal) welcomeModal.style.display="none";};
+
+    function clearAnalytics(){ if(currentRef) currentRef.remove(); }
+
+    function openWelcome(){ welcomeModal.style.display="block"; }
+    closeWelcome.onclick=()=>welcomeModal.style.display="none";
+    copyBtn.onclick=()=>{ navigator.clipboard.writeText(scriptCode.textContent).then(()=>{copyBtn.textContent="✅ Copied!"; setTimeout(()=>copyBtn.textContent="📋 Copy",1500);});};
+
+    // Export CSV
+    document.getElementById("exportBtn").onclick = () => {
+      if(!cachedData) return showError("No data loaded!");
+      const rows=[["URL","Referrer","User Agent","Timestamp"]]; Object.values(cachedData).forEach(e=>rows.push([e.url,e.referrer,e.userAgent,new Date(e.timestamp).toLocaleString()])); const csv=rows.map(r=>r.join(",")).join("\n");
+      const blob=new Blob([csv],{type:"text/csv"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="analytics.csv"; a.click();
+    };
+
+    // On load: confetti then welcome modal
+    window.onload=()=>{ confetti({ particleCount:100, spread:60, origin:{ y:0.6 } }); openWelcome(); };
+
+    // Persistent Site ID from URL
+    const params=new URLSearchParams(window.location.search);
+    const siteFromUrl=params.get("site"); if(siteFromUrl){ siteIdInput.value=siteFromUrl; loadAnalytics(siteFromUrl);}
   </script>
 
 </body>
